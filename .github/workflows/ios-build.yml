@@ -36,14 +36,12 @@ jobs:
         cd ios
         # 创建构建目录
         mkdir -p build
-        # 构建应用
-        xcodebuild -project App/App.xcodeproj -scheme App -configuration Release -sdk iphoneos -archivePath $PWD/build/App.xcarchive archive
-        # 导出 IPA 文件
-        xcodebuild -exportArchive -archivePath $PWD/build/App.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath $PWD/build
+        # 构建应用（使用模拟器，禁用签名）
+        xcodebuild -project App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 14' build CODE_SIGNING_REQUIRED=NO
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: ios-app
-        path: ios/build
+        path: ios/App/build/Debug-iphonesimulator
         retention-days: 30
