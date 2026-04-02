@@ -6,7 +6,7 @@ import Anniversary from './pages/Anniversary'
 
 function App() {
   return (
-    <Router>
+    <Router basename="/door-app">
       <Routes>
         <Route path="/" element={<Navigate to="/welcome" />} />
         <Route path="/welcome" element={<Welcome />} />
