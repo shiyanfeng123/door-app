@@ -1,22 +1,41 @@
 const CACHE_NAME = 'dorr-app-cache-v1';
 
-// 核心资源，不包含带有哈希值的文件
-const CORE_ASSETS = [
-  '/door-app/',
-  '/door-app/index.html',
-  '/door-app/manifest.json',
-  '/door-app/service-worker.js'
-];
-
+// 安装 Service Worker 时缓存核心资源
 self.addEventListener('install', event => {
+  self.skipWaiting();
+});
+
+// 激活 Service Worker 时清理旧缓存
+self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(CORE_ASSETS))
-      .then(() => self.skipWaiting())
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+    .then(() => self.clients.claim())
   );
 });
 
+// 处理网络请求
 self.addEventListener('fetch', event => {
+  // 对于导航请求，始终从网络获取
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => {
+          // 如果网络请求失败，尝试从缓存获取
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // 对于其他请求，使用缓存优先策略
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -24,7 +43,7 @@ self.addEventListener('fetch', event => {
         if (response) {
           return response;
         }
-        
+
         // 否则从网络获取
         return fetch(event.request)
           .then(networkResponse => {
@@ -39,21 +58,5 @@ self.addEventListener('fetch', event => {
             return networkResponse;
           });
       })
-  );
-});
-
-self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (!cacheWhitelist.includes(cacheName)) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
-    .then(() => self.clients.claim())
   );
 });
