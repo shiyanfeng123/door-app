@@ -18,7 +18,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
     
     - name: Install dependencies
       run: npm install
@@ -32,13 +31,18 @@ jobs:
     - name: Sync Capacitor project
       run: npx cap sync ios
     
+    - name: Install CocoaPods dependencies
+      run: |
+        cd ios
+        pod install
+    
     - name: Build iOS app
       run: |
         cd ios
         # 创建构建目录
         mkdir -p build
         # 构建应用
-        xcodebuild -workspace App/App.xcworkspace -scheme App -configuration Release -sdk iphoneos -archivePath $PWD/build/App.xcarchive archive
+        xcodebuild -project App/App.xcodeproj -scheme App -configuration Release -sdk iphoneos -archivePath $PWD/build/App.xcarchive archive
         # 导出 IPA 文件
         xcodebuild -exportArchive -archivePath $PWD/build/App.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath $PWD/build
     
