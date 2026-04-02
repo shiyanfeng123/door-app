@@ -64,14 +64,30 @@ function Order() {
 
   // 处理滚动，更新当前活跃分类
   const handleScroll = () => {
-    const scrollPosition = window.scrollY + 50
+    const dishListElement = document.querySelector('.dish-list')
+    if (!dishListElement) return
     
-    for (const category of categories) {
+    const scrollPosition = dishListElement.scrollTop + 50
+    
+    // 遍历所有分类，找到当前滚动位置对应的分类
+    for (let i = 0; i < categories.length; i++) {
+      const category = categories[i]
       const element = categoryRefs.current[category]
       if (element) {
+        // 获取当前分类的顶部位置
         const offsetTop = element.offsetTop
-        const offsetBottom = offsetTop + element.offsetHeight
         
+        // 获取当前分类的底部位置
+        let offsetBottom = Infinity
+        if (i < categories.length - 1) {
+          const nextCategory = categories[i + 1]
+          const nextElement = categoryRefs.current[nextCategory]
+          if (nextElement) {
+            offsetBottom = nextElement.offsetTop
+          }
+        }
+        
+        // 检查滚动位置是否在当前分类范围内
         if (scrollPosition >= offsetTop && scrollPosition < offsetBottom) {
           setActiveCategory(category)
           break
@@ -82,9 +98,12 @@ function Order() {
   
   // 添加滚动监听
   useEffect(() => {
-    window.addEventListener('scroll', handleScroll)
-    return () => {
-      window.removeEventListener('scroll', handleScroll)
+    const dishListElement = document.querySelector('.dish-list')
+    if (dishListElement) {
+      dishListElement.addEventListener('scroll', handleScroll)
+      return () => {
+        dishListElement.removeEventListener('scroll', handleScroll)
+      }
     }
   }, [])
 
@@ -224,13 +243,38 @@ function Order() {
     if (menuRef.current) {
       try {
         const canvas = await html2canvas(menuRef.current)
-        const dataUrl = canvas.toDataURL('image/png')
         
-        // 创建下载链接
-        const link = document.createElement('a')
-        link.download = 'menu.png'
-        link.href = dataUrl
-        link.click()
+        // 将 canvas 转换为 blob
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+            alert('截图生成失败')
+            return
+          }
+
+          // 检查浏览器是否支持 Web Share API 分享文件
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [blob] })) {
+            try {
+              await navigator.share({
+                title: '我的点菜清单',
+                text: '看看我点的菜',
+                files: [
+                  new File([blob], 'menu.png', { type: 'image/png' })
+                ]
+              })
+              console.log('分享成功')
+            } catch (error) {
+              console.error('分享失败:', error)
+            }
+          } else {
+            // 浏览器不支持分享文件，提供下载选项
+            const dataUrl = canvas.toDataURL('image/png')
+            const link = document.createElement('a')
+            link.download = 'menu.png'
+            link.href = dataUrl
+            link.click()
+            alert('您的浏览器不支持分享功能，已为您下载截图')
+          }
+        }, 'image/png', 1.0)
       } catch (error) {
         console.error('生成菜单图片失败:', error)
       }
