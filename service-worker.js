@@ -1,9 +1,9 @@
 const CACHE_NAME = 'dorr-app-cache-v1';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/assets/index.js',
-  '/assets/index.css'
+  '/door-app/',
+  '/door-app/index.html',
+  '/door-app/assets/index.js',
+  '/door-app/assets/index.css'
 ];
 
 self.addEventListener('install', event => {
