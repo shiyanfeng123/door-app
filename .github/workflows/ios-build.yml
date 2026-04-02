@@ -37,11 +37,11 @@ jobs:
         # 创建构建目录
         mkdir -p build
         # 构建应用（使用模拟器，禁用签名）
-        xcodebuild -project App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPad (10th generation)' build CODE_SIGNING_REQUIRED=NO
+        xcodebuild -project App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPad (10th generation)' -derivedDataPath build build CODE_SIGNING_REQUIRED=NO
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: ios-app
-        path: ios/App/build/Debug-iphonesimulator
+        path: ios/build/Build/Products/Debug-iphonesimulator
         retention-days: 30
