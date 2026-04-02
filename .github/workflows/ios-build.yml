@@ -1,0 +1,50 @@
+name: iOS Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    # 允许手动触发构建
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm install
+    
+    - name: Build web app
+      run: npm run build
+    
+    - name: Install Capacitor CLI
+      run: npm install -g @capacitor/cli
+    
+    - name: Sync Capacitor project
+      run: npx cap sync ios
+    
+    - name: Build iOS app
+      run: |
+        cd ios
+        # 创建构建目录
+        mkdir -p build
+        # 构建应用
+        xcodebuild -workspace App/App.xcworkspace -scheme App -configuration Release -sdk iphoneos -archivePath $PWD/build/App.xcarchive archive
+        # 导出 IPA 文件
+        xcodebuild -exportArchive -archivePath $PWD/build/App.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath $PWD/build
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-app
+        path: ios/build
+        retention-days: 30

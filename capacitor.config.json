@@ -1,0 +1,8 @@
+{
+  "appId": "com.dorr.app",
+  "appName": "Dorr",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Dorr</string>
+    <string name="title_activity_main">Dorr</string>
+    <string name="package_name">com.dorr.app</string>
+    <string name="custom_url_scheme">com.dorr.app</string>
+</resources>
