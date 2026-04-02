@@ -31,11 +31,6 @@ jobs:
     - name: Sync Capacitor project
       run: npx cap sync ios
     
-    - name: Install CocoaPods dependencies
-      run: |
-        cd ios
-        pod install
-    
     - name: Build iOS app
       run: |
         cd ios
