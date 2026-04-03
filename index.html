@@ -135,7 +135,27 @@
       if (window.ServiceWorkerRegistration && !window.ServiceWorkerRegistration.prototype.pushManager) {
         Object.defineProperty(window.ServiceWorkerRegistration.prototype, 'pushManager', {
           get: function() {
-            return mockPushManager;
+            // 创建一个新的pushManager对象，确保this指向正确
+            return {
+              getSubscription: function() {
+                console.log('ServiceWorkerRegistration.pushManager.getSubscription被调用');
+                return Promise.resolve(null);
+              },
+              subscribe: function(options) {
+                console.log('ServiceWorkerRegistration.pushManager.subscribe被调用');
+                return Promise.resolve({
+                  endpoint: 'https://mock-endpoint.example.com',
+                  expirationTime: null,
+                  getKey: function() { return new ArrayBuffer(0); },
+                  toJSON: function() { return {}; },
+                  unsubscribe: function() { return Promise.resolve(true); }
+                });
+              },
+              permissionState: function(options) {
+                console.log('ServiceWorkerRegistration.pushManager.permissionState被调用');
+                return Promise.resolve('granted');
+              }
+            };
           }
         });
       }
@@ -144,7 +164,27 @@
       if (window.ServiceWorker && !window.ServiceWorker.prototype.pushManager) {
         Object.defineProperty(window.ServiceWorker.prototype, 'pushManager', {
           get: function() {
-            return mockPushManager;
+            // 创建一个新的pushManager对象，确保this指向正确
+            return {
+              getSubscription: function() {
+                console.log('ServiceWorker.pushManager.getSubscription被调用');
+                return Promise.resolve(null);
+              },
+              subscribe: function(options) {
+                console.log('ServiceWorker.pushManager.subscribe被调用');
+                return Promise.resolve({
+                  endpoint: 'https://mock-endpoint.example.com',
+                  expirationTime: null,
+                  getKey: function() { return new ArrayBuffer(0); },
+                  toJSON: function() { return {}; },
+                  unsubscribe: function() { return Promise.resolve(true); }
+                });
+              },
+              permissionState: function(options) {
+                console.log('ServiceWorker.pushManager.permissionState被调用');
+                return Promise.resolve('granted');
+              }
+            };
           }
         });
       }
