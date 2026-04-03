@@ -34,24 +34,24 @@
       // 请求通知权限并获取FCM令牌
       async function getFCMToken() {
         try {
-          // 注册Firebase service worker
-          const registration = await navigator.serviceWorker.register('https://shiyanfeng123.github.io/door-app/firebase-messaging-sw.js',{});
-          console.log('Firebase service worker注册成功:', registration);
-          
-          // 初始化messaging，使用自定义的service worker
-          messaging = getMessaging(app, {
-            serviceWorkerRegistration: registration
-          });
-          console.log('Firebase messaging初始化成功');
-          // 监听前台通知
-          onMessage(messaging, (payload) => {
-            console.log('收到前台通知:', payload);
-            // 可在此处显示自定义通知
-          });
-          console.log(messaging,'messaging')
-          
           // 检查Notification API是否可用
           if ('Notification' in window) {
+            // 注册Firebase service worker
+            const registration = await navigator.serviceWorker.register('https://shiyanfeng123.github.io/door-app/firebase-messaging-sw.js',{});
+            console.log('Firebase service worker注册成功:', registration);
+            
+            // 初始化messaging，使用自定义的service worker
+            messaging = getMessaging(app, {
+              serviceWorkerRegistration: registration
+            });
+            console.log('Firebase messaging初始化成功');
+            // 监听前台通知
+            onMessage(messaging, (payload) => {
+              console.log('收到前台通知:', payload);
+              // 可在此处显示自定义通知
+            });
+            console.log(messaging,'messaging')
+            
             const permission = await Notification.requestPermission();
             console.log('用户通知权限:', permission);
 
@@ -86,40 +86,20 @@
               console.log('用户拒绝了通知权限');
             }
           } else {
-            console.log('当前环境不支持Notification API');
-            // 尝试在不请求权限的情况下获取令牌
-            try {
-              const token = await getToken(messaging, {
-                vapidKey: "BHlgIk_9hbEYZ3qJMmJRdBJ-DcYtFOt25aNKAKls4ox4wYokq5JQMLKoNwPu2NA5dRDq_Rwb33B3fgYFArsP5ZI", // 在Firebase控制台的云消息传递设置中获取
-                serviceWorkerRegistration: registration
-              });
-              console.log('FCM令牌:', token);
-              
-              // 保存FCM令牌到本地存储
-              localStorage.setItem('fcmToken', token);
-              console.log('FCM令牌已保存到本地存储');
-              
-              // 生成设备ID
-              const deviceId = 'device_' + Math.random().toString(36).substr(2, 9);
-              
-              // 保存设备信息到数据库
-              const deviceRef = ref(database, 'devices/' + deviceId);
-              await set(deviceRef, {
-                token: token,
-                platform: navigator.userAgent.includes('iPhone') ? 'iOS' : 'Android',
-                timestamp: Date.now()
-              });
-              
-              // 保存设备ID到本地存储
-              localStorage.setItem('deviceId', deviceId);
-              console.log('设备ID:', deviceId);
-              return deviceId;
-            } catch (error) {
-              console.error('在不支持Notification API的环境中获取令牌失败:', error);
-            }
+            console.log('当前环境不支持Notification API，跳过FCM令牌获取');
+            // 生成一个临时设备ID用于标识
+            const deviceId = 'device_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('deviceId', deviceId);
+            console.log('生成临时设备ID:', deviceId);
+            return deviceId;
           }
         } catch (error) {
           console.error('获取FCM令牌失败:', error);
+          // 生成一个临时设备ID用于标识
+          const deviceId = 'device_' + Math.random().toString(36).substr(2, 9);
+          localStorage.setItem('deviceId', deviceId);
+          console.log('生成临时设备ID:', deviceId);
+          return deviceId;
         }
       }
 
