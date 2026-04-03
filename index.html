@@ -16,35 +16,58 @@
   <body>
     <div id="root"></div>
     <script>
-      // 初始化 OneSignal
-      window.OneSignal = window.OneSignal || [];
-      OneSignal.push(function() {
-        OneSignal.init({
-          appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
-          autoRegister: true,
-          notifyButton: {
-            enable: true
-          }
-        });
+  // 初始化 OneSignal
+  window.OneSignal = window.OneSignal || [];
+  OneSignal.push(function() {
+    OneSignal.init({
+      appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
+      autoRegister: true,
+      notifyButton: {
+        enable: true
+      },
+      allowLocalhostAsSecureOrigin: true
+    });
 
-        // 获取用户的 OneSignal 播放器 ID
+    // 监听通知权限变化
+    OneSignal.on('permissionChange', function(permissionChange) {
+      var currentPermission = permissionChange.to;
+      console.log('通知权限变化为:', currentPermission);
+    });
+
+    // 监听注册成功事件
+    OneSignal.on('subscriptionChange', function(isSubscribed) {
+      console.log('订阅状态变化为:', isSubscribed);
+      if (isSubscribed) {
         OneSignal.getUserId(function(userId) {
           console.log("OneSignal User ID:", userId);
           // 保存此 ID，用于发送定向通知
         });
-      });
-
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/door-app/service-worker.js')
-            .then(registration => {
-              console.log('Service Worker registered with scope:', registration.scope);
-            })
-            .catch(error => {
-              console.error('Service Worker registration failed:', error);
-            });
-        });
       }
-    </script>
+    });
+
+    // 尝试获取用户 ID
+    OneSignal.getUserId(function(userId) {
+      console.log("OneSignal User ID:", userId);
+      if (userId) {
+        // 用户已注册
+      } else {
+        // 用户未注册，尝试注册
+        OneSignal.registerForPushNotifications();
+      }
+    });
+  });
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/door-app/service-worker.js')
+        .then(registration => {
+          console.log('Service Worker registered with scope:', registration.scope);
+        })
+        .catch(error => {
+          console.error('Service Worker registration failed:', error);
+        });
+    });
+  }
+</script>
   </body>
 </html>
