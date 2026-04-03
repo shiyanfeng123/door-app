@@ -20,12 +20,7 @@
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({
-          appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
-          serviceWorkerParam: {
-            scope: '/door-app/'
-          },
-          serviceWorkerPath: '/door-app/OneSignalSDKWorker.js',
-          serviceWorkerUpdaterPath: '/door-app/OneSignalSDKExtensionWorker.js'
+          appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af"
         });
 
         // 监听通知权限变化
