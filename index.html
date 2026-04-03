@@ -19,6 +19,28 @@
       // 阻止OneSignal从根路径注册ServiceWorker
       const originalServiceWorker = navigator.serviceWorker;
       
+      // 创建一个完整的PushManager模拟
+      const mockPushManager = {
+        getSubscription: function() {
+          console.log('模拟PushManager.getSubscription被调用');
+          return Promise.resolve(null);
+        },
+        subscribe: function(options) {
+          console.log('模拟PushManager.subscribe被调用');
+          return Promise.resolve({
+            endpoint: 'https://mock-endpoint.example.com',
+            expirationTime: null,
+            getKey: function() { return new ArrayBuffer(0); },
+            toJSON: function() { return {}; },
+            unsubscribe: function() { return Promise.resolve(true); }
+          });
+        },
+        permissionState: function(options) {
+          console.log('模拟PushManager.permissionState被调用');
+          return Promise.resolve('granted');
+        }
+      };
+      
       // 创建一个新的ServiceWorker对象
       const mockServiceWorker = {
         register: function(scriptURL, options) {
@@ -31,15 +53,12 @@
               active: {
                 scriptURL: '/door-app/OneSignalSDKWorker.js',
                 state: 'activated',
-                pushManager: {
-                  getSubscription: function() {
-                    return Promise.resolve(null);
-                  },
-                  subscribe: function() {
-                    return Promise.resolve({});
-                  }
-                }
-              }
+                pushManager: mockPushManager
+              },
+              pushManager: mockPushManager,
+              installing: null,
+              waiting: null,
+              navigationPreload: {}
             });
           }
           // 其他ServiceWorker正常注册
@@ -50,14 +69,11 @@
           return originalServiceWorker.ready.then(function(registration) {
             // 确保registration.active.pushManager存在
             if (registration.active && !registration.active.pushManager) {
-              registration.active.pushManager = {
-                getSubscription: function() {
-                  return Promise.resolve(null);
-                },
-                subscribe: function() {
-                  return Promise.resolve({});
-                }
-              };
+              registration.active.pushManager = mockPushManager;
+            }
+            // 确保registration.pushManager存在
+            if (!registration.pushManager) {
+              registration.pushManager = mockPushManager;
             }
             return registration;
           });
@@ -65,15 +81,33 @@
         
         // 其他方法和属性
         get controller() {
-          return originalServiceWorker.controller;
+          const controller = originalServiceWorker.controller;
+          if (controller && !controller.pushManager) {
+            controller.pushManager = mockPushManager;
+          }
+          return controller;
         },
         
         get registration() {
-          return originalServiceWorker.registration;
+          const registration = originalServiceWorker.registration;
+          if (registration && !registration.pushManager) {
+            registration.pushManager = mockPushManager;
+          }
+          return registration;
         },
         
         get registrations() {
-          return originalServiceWorker.registrations;
+          return originalServiceWorker.registrations.then(function(registrations) {
+            return registrations.map(function(registration) {
+              if (!registration.pushManager) {
+                registration.pushManager = mockPushManager;
+              }
+              if (registration.active && !registration.active.pushManager) {
+                registration.active.pushManager = mockPushManager;
+              }
+              return registration;
+            });
+          });
         },
         
         addEventListener: function() {
@@ -96,6 +130,24 @@
         enumerable: true,
         configurable: true
       });
+      
+      // 确保ServiceWorkerRegistration对象总是有pushManager
+      if (window.ServiceWorkerRegistration && !window.ServiceWorkerRegistration.prototype.pushManager) {
+        Object.defineProperty(window.ServiceWorkerRegistration.prototype, 'pushManager', {
+          get: function() {
+            return mockPushManager;
+          }
+        });
+      }
+      
+      // 确保ServiceWorker对象总是有pushManager
+      if (window.ServiceWorker && !window.ServiceWorker.prototype.pushManager) {
+        Object.defineProperty(window.ServiceWorker.prototype, 'pushManager', {
+          get: function() {
+            return mockPushManager;
+          }
+        });
+      }
       
       // OneSignal 初始化 - 完全控制ServiceWorker
       window.OneSignalDeferred = window.OneSignalDeferred || [];
