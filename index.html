@@ -144,12 +144,9 @@
           attemptCount++;
           console.log(`尝试获取用户ID (${attemptCount}/${maxAttempts})`);
           
-          // 检查OneSignal是否已初始化
-          if (OneSignal.isInitialized()) {
-            console.log('OneSignal已初始化');
-          } else {
-            console.log('OneSignal尚未初始化');
-          }
+          // 检查OneSignal对象的状态
+          console.log('OneSignal对象状态:', OneSignal);
+          console.log('OneSignal方法:', Object.keys(OneSignal));
           
           // 尝试获取用户ID
           try {
