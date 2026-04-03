@@ -16,7 +16,7 @@
   <body>
     <div id="root"></div>
     <script>
-      // OneSignal 初始化 - 使用根路径ServiceWorker
+      // OneSignal 初始化 - 使用子路径ServiceWorker
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
         // 准确的环境检测
@@ -41,11 +41,24 @@
         }
         
         try {
-          // 简化配置：使用根路径ServiceWorker
+          // 核心修复：手动注册ServiceWorker，完全控制路径
+          console.log('开始手动注册ServiceWorker');
+          
+          // 手动注册ServiceWorker，使用子路径
+          const registration = await navigator.serviceWorker.register(
+            '/door-app/OneSignalSDKWorker.js',
+            {
+              scope: '/door-app/'
+            }
+          );
+          
+          console.log('ServiceWorker注册成功:', registration);
+          
+          // 初始化OneSignal，使用我们手动注册的ServiceWorker
           await OneSignal.init({
             appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
-            // 根路径部署，使用默认路径
-            serviceWorkerPath: 'OneSignalSDKWorker.js',
+            // 禁用自动注册，使用我们手动注册的
+            autoRegister: false,
             // 允许本地开发环境使用HTTP
             allowLocalhostAsSecureOrigin: true,
             // 自动提示用户订阅
@@ -59,7 +72,14 @@
             }
           });
           
+          // 通知OneSignal使用我们手动注册的ServiceWorker
+          await OneSignal.setServiceWorker(registration);
+          
           console.log('OneSignal初始化成功');
+          
+          // 现在请求通知权限
+          const permission = await OneSignal.Notifications.requestPermission();
+          console.log('通知权限获取成功:', permission);
           
           // 监听通知权限变化
           OneSignal.on('permissionChange', function(permissionChange) {
