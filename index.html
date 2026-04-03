@@ -125,7 +125,7 @@
         console.log('开始手动注册ServiceWorker');
         
         // 手动注册ServiceWorker，使用子路径
-        originalRegister.apply(navigator.serviceWorker, [
+        originalServiceWorker.register.apply(originalServiceWorker, [
           '/door-app/OneSignalSDKWorker.js',
           {
             scope: '/door-app/'
