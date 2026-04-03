@@ -11,202 +11,101 @@
     <!-- OneSignal SDK -->
     <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async></script>
     <script>
-      // 简化的OneSignal集成
+      // 最新的OneSignal集成方式
       window.OneSignal = window.OneSignal || [];
       console.log('OneSignal SDK加载中...');
       
       // 配置OneSignal
       OneSignal.push(function() {
         console.log('开始配置OneSignal');
-        try {
-          // 基本配置，避免复杂的Service Worker设置
-          OneSignal.init({
-            appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
-            autoRegister: true,
-            notifyButton: {
-              enable: true
-            },
-            serviceWorker: {
-              useOneSignalWorker: false // 禁用OneSignal的Service Worker
-            },
-            debug: true
-          });
-          
-          console.log('OneSignal初始化完成');
-          
-          // 监听idsAvailable事件 - 关键事件，获取用户ID
-          OneSignal.on('idsAvailable', function(ids) {
-            console.log('✅ idsAvailable事件触发:', ids);
-            if (ids && ids.userId) {
-              console.log('✅ 获取到OneSignal用户ID:', ids.userId);
-              // 保存到本地存储
-              localStorage.setItem('onesignalUserId', ids.userId);
-              // 更新UI显示
-              document.getElementById('deviceIdDisplay').textContent = ids.userId;
-              console.log('✅ 用户ID已保存并显示');
-            } else {
-              console.log('❌ 未获取到用户ID');
-            }
-          });
-          
-          // 监听初始化事件
-          OneSignal.on('initialized', function() {
-            console.log('✅ OneSignal初始化成功');
-          });
-          
-          // 监听通知权限变化
-          OneSignal.on('notificationPermissionChange', function(permissionChange) {
-            console.log('📢 通知权限变化:', permissionChange);
-            if (permissionChange.granted) {
-              console.log('✅ 用户授予了通知权限');
-              // 权限授予后尝试获取用户ID
-              OneSignal.getUserId(function(userId) {
-                console.log('✅ 授权后获取用户ID:', userId);
-                if (userId) {
-                  localStorage.setItem('onesignalUserId', userId);
-                  document.getElementById('deviceIdDisplay').textContent = userId;
-                }
-              });
-            }
-          });
-          
-          // 监听错误事件
-          OneSignal.on('error', function(error) {
-            console.error('❌ OneSignal错误:', error);
-          });
-          
-          // 主动请求通知权限
-          console.log('🔔 尝试请求通知权限');
-          
-          // 检查OneSignal可用方法
-          console.log('OneSignal可用方法:', Object.keys(OneSignal));
-          
-          // 尝试多种方法请求权限
-          try {
-            // 方法1: 直接调用registerForPushNotifications
-            console.log('方法1: 尝试调用registerForPushNotifications');
-            if (OneSignal.registerForPushNotifications) {
-              OneSignal.registerForPushNotifications();
-              console.log('✅ 已调用registerForPushNotifications');
-            } else {
-              console.log('❌ OneSignal.registerForPushNotifications不存在');
-              
-              // 方法2: 尝试使用原生Notification API
-              console.log('方法2: 尝试使用原生Notification API');
-              if ('Notification' in window) {
-                console.log('📢 开始请求原生通知权限');
-                Notification.requestPermission().then(function(permission) {
-                  console.log('🔔 原生通知权限请求结果:', permission);
-                  
-                  // 权限授予后尝试获取用户ID
-                  if (permission === 'granted') {
-                    console.log('✅ 权限已授予，尝试获取用户ID');
-                    if (OneSignal.getUserId) {
-                      OneSignal.getUserId(function(userId) {
-                        console.log('✅ 获取用户ID:', userId);
-                        if (userId) {
-                          localStorage.setItem('onesignalUserId', userId);
-                          document.getElementById('deviceIdDisplay').textContent = userId;
-                        }
-                      });
-                    }
-                  }
-                });
-              } else {
-                console.log('❌ 浏览器不支持Notification API');
+        
+        // 初始化OneSignal
+        OneSignal.init({
+          appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
+          autoRegister: false, // 手动控制注册
+          notifyButton: {
+            enable: true
+          },
+          serviceWorker: {
+            useOneSignalWorker: false // 避免Service Worker冲突
+          },
+          debug: true
+        });
+        
+        console.log('OneSignal初始化完成');
+        
+        // 监听订阅状态变化
+        OneSignal.on('subscriptionChange', function(isSubscribed) {
+          console.log('订阅状态变化:', isSubscribed);
+          if (isSubscribed) {
+            // 获取用户ID
+            OneSignal.getUserId().then(function(userId) {
+              console.log('获取到用户ID:', userId);
+              if (userId) {
+                localStorage.setItem('onesignalUserId', userId);
+                document.getElementById('deviceIdDisplay').textContent = userId;
+                console.log('用户ID已保存并显示');
               }
-            }
-          } catch (error) {
-            console.error('❌ 请求权限时出错:', error);
-            
-            // 兜底方案: 使用原生Notification API
-            if ('Notification' in window) {
-              console.log('兜底方案: 使用原生Notification API');
-              Notification.requestPermission().then(function(permission) {
-                console.log('🔔 兜底方案权限请求结果:', permission);
-              });
-            }
+            }).catch(function(error) {
+              console.error('获取用户ID失败:', error);
+            });
           }
-          
-          // 延迟尝试获取用户ID
-          setTimeout(function() {
-            console.log('延迟尝试获取用户ID');
-            if (OneSignal.getUserId) {
-              console.log('调用OneSignal.getUserId');
-              OneSignal.getUserId(function(userId) {
-                console.log('延迟获取用户ID:', userId);
+        });
+        
+        // 监听错误事件
+        OneSignal.on('error', function(error) {
+          console.error('OneSignal错误:', error);
+        });
+        
+        // 手动请求权限并注册
+        console.log('请求通知权限');
+        OneSignal.showNativePrompt().then(function(permissionChange) {
+          console.log('权限请求结果:', permissionChange);
+          if (permissionChange.granted) {
+            console.log('权限已授予，正在注册...');
+            OneSignal.registerForPushNotifications().then(function() {
+              console.log('注册成功');
+              // 注册成功后获取用户ID
+              OneSignal.getUserId().then(function(userId) {
+                console.log('注册后获取用户ID:', userId);
                 if (userId) {
                   localStorage.setItem('onesignalUserId', userId);
                   document.getElementById('deviceIdDisplay').textContent = userId;
-                  console.log('用户ID已保存并显示');
-                } else {
-                  console.log('未获取到用户ID，尝试其他方法');
-                  
-                  // 尝试检查订阅状态
-                  if (OneSignal.isPushNotificationsEnabled) {
-                    console.log('尝试检查推送通知状态');
-                    OneSignal.isPushNotificationsEnabled(function(isEnabled) {
-                      console.log('推送通知状态:', isEnabled);
-                    });
-                  }
-                  
-                  // 再次尝试请求权限
-                  if ('Notification' in window) {
-                    console.log('再次尝试请求原生通知权限');
-                    Notification.requestPermission().then(function(permission) {
-                      console.log('再次请求权限结果:', permission);
-                      if (permission === 'granted') {
-                        console.log('权限已授予，再次尝试获取用户ID');
-                        OneSignal.getUserId(function(userIdAfterPermission) {
-                          console.log('再次获取用户ID:', userIdAfterPermission);
-                          if (userIdAfterPermission) {
-                            localStorage.setItem('onesignalUserId', userIdAfterPermission);
-                            document.getElementById('deviceIdDisplay').textContent = userIdAfterPermission;
-                          }
-                        });
-                      }
-                    });
-                  }
                 }
               });
-            } else {
-              console.log('OneSignal.getUserId不存在');
-            }
-          }, 3000);
-          
-          // 监听idsAvailable事件 - 再次确保事件监听器已注册
-          console.log('再次注册idsAvailable事件监听器');
-          OneSignal.on('idsAvailable', function(ids) {
-            console.log('🔔 idsAvailable事件触发:', ids);
-            if (ids && ids.userId) {
-              console.log('✅ 通过idsAvailable获取用户ID:', ids.userId);
-              localStorage.setItem('onesignalUserId', ids.userId);
-              document.getElementById('deviceIdDisplay').textContent = ids.userId;
-              console.log('✅ 用户ID已保存并显示');
-            } else {
-              console.log('❌ idsAvailable事件未提供用户ID');
-            }
-          });
-          
-        } catch (error) {
-          console.error('❌ OneSignal初始化失败:', error);
-        }
+            }).catch(function(error) {
+              console.error('注册失败:', error);
+            });
+          }
+        }).catch(function(error) {
+          console.error('请求权限失败:', error);
+          // 兜底方案: 使用原生Notification API
+          if ('Notification' in window) {
+            console.log('使用原生Notification API请求权限');
+            Notification.requestPermission().then(function(permission) {
+              console.log('原生权限请求结果:', permission);
+              if (permission === 'granted') {
+                console.log('权限已授予，尝试注册');
+                OneSignal.registerForPushNotifications();
+              }
+            });
+          }
+        });
       });
 
       // 页面加载完成后检查状态
       window.addEventListener('load', function() {
-        console.log('📄 页面加载完成');
+        console.log('页面加载完成');
         // 从本地存储读取已保存的用户ID
         const savedUserId = localStorage.getItem('onesignalUserId');
         if (savedUserId) {
-          console.log('✅ 从本地存储读取到用户ID:', savedUserId);
+          console.log('从本地存储读取到用户ID:', savedUserId);
           document.getElementById('deviceIdDisplay').textContent = savedUserId;
         }
       });
 
       // 点击按钮发送通知
       window.sendNotification = async function(notificationBody = '苹果用户点击了"我点好啦"按钮') {
-        // 获取目标设备OneSignal用户ID
         let targetUserId;
         const useFixedToken = document.getElementById('useFixedToken').checked;
         
@@ -222,7 +121,6 @@
         }
 
         try {
-          // 构建通知数据
           const notificationData = {
             contents: {
               en: notificationBody
@@ -234,12 +132,10 @@
             web_url: 'https://shiyanfeng123.github.io/door-app/'
           };
 
-          // 显示发送信息
           alert('正在发送通知...');
-          console.log('🚀 发送通知到:', targetUserId);
-          console.log('📝 通知内容:', notificationData);
+          console.log('发送通知到:', targetUserId);
+          console.log('通知内容:', notificationData);
 
-          // 使用OneSignal REST API发送通知
           const response = await fetch('https://onesignal.com/api/v1/notifications', {
             method: 'POST',
             headers: {
@@ -250,17 +146,17 @@
           });
 
           const result = await response.json();
-          console.log('📡 OneSignal API响应:', result);
+          console.log('OneSignal API响应:', result);
 
           if (result.id) {
             alert('通知发送成功！');
-            console.log('✅ 通知发送成功');
+            console.log('通知发送成功');
           } else {
             alert('发送失败: ' + result.errors.join(', '));
-            console.error('❌ 发送失败:', result.errors);
+            console.error('发送失败:', result.errors);
           }
         } catch (error) {
-          console.error('❌ 发送失败:', error);
+          console.error('发送失败:', error);
           alert('发送失败');
         }
       };
