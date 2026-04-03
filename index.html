@@ -53,8 +53,10 @@
           console.log('用户通知权限:', permission);
 
           if (permission === 'granted') {
+            // 使用已经注册的service worker
             const token = await getToken(messaging, {
-              vapidKey: "BHlgIk_9hbEYZ3qJMmJRdBJ-DcYtFOt25aNKAKls4ox4wYokq5JQMLKoNwPu2NA5dRDq_Rwb33B3fgYFArsP5ZI" // 在Firebase控制台的云消息传递设置中获取
+              vapidKey: "BHlgIk_9hbEYZ3qJMmJRdBJ-DcYtFOt25aNKAKls4ox4wYokq5JQMLKoNwPu2NA5dRDq_Rwb33B3fgYFArsP5ZI", // 在Firebase控制台的云消息传递设置中获取
+              serviceWorkerRegistration: registration
             });
             console.log('FCM令牌:', token);
             
