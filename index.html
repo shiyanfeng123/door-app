@@ -136,40 +136,34 @@
           // 保存注册信息到全局变量，供OneSignal使用
           window.__oneSignalServiceWorkerRegistration = registration;
           
-          // 初始化OneSignal，禁用所有ServiceWorker相关选项
+          // 初始化OneSignal，完全禁用ServiceWorker
           OneSignal.init({
             appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
             // 禁用自动注册
             autoRegister: false,
-            // 禁用ServiceWorker自动注册
-            serviceWorkerPath: '/door-app/OneSignalSDKWorker.js',
-            serviceWorkerParam: {
-              scope: '/door-app/'
-            },
+            // 禁用ServiceWorker
+            serviceWorkerPath: '',
+            serviceWorkerParam: {},
             // 允许本地开发环境使用HTTP
             allowLocalhostAsSecureOrigin: true,
-            // 自动提示用户订阅
+            // 禁用自动提示
             promptOptions: {
               slidedown: {
-                enabled: true,
-                autoPrompt: true,
-                timeDelay: 3,
-                pageViews: 1
+                enabled: false
               }
             }
           }).then(function() {
             console.log('OneSignal初始化成功');
             
-            // 检查PushManager是否可用
-            if ('PushManager' in window && OneSignal.Notifications) {
-              // 现在请求通知权限
-              OneSignal.Notifications.requestPermission().then(function(permission) {
+            // 手动处理通知权限
+            if ('Notification' in window) {
+              Notification.requestPermission().then(function(permission) {
                 console.log('通知权限获取成功:', permission);
               }).catch(function(error) {
                 console.error('获取通知权限失败:', error);
               });
             } else {
-              console.log('PushManager不可用或OneSignal.Notifications不存在，跳过通知相关操作');
+              console.log('浏览器不支持通知，跳过通知相关操作');
             }
           }).catch(function(error) {
             console.error('OneSignal初始化失败:', error);
