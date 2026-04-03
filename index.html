@@ -69,23 +69,50 @@
         
         // 配置OneSignal
         console.log('开始配置OneSignal');
-        OneSignal.init({
-          appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
-          notifyButton: {
-            enable: true
-          },
-          serviceWorker: {
-            useOneSignalWorker: true,
-            serviceWorkerPath: 'OneSignalSDKWorker.js',
-            serviceWorkerUpdaterPath: 'OneSignalSDKUpdaterWorker.js',
-            registrationOptions: {
-              scope: './'
-            }
-          },
-          debug: true // 启用调试模式
-        });
+        try {
+          OneSignal.init({
+            appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
+            notifyButton: {
+              enable: true
+            },
+            serviceWorker: {
+              useOneSignalWorker: true,
+              serviceWorkerPath: 'OneSignalSDKWorker.js',
+              serviceWorkerUpdaterPath: 'OneSignalSDKUpdaterWorker.js',
+              registrationOptions: {
+                scope: './'
+              }
+            },
+            debug: true // 启用调试模式
+          });
 
-        console.log('OneSignal初始化完成');
+          console.log('OneSignal初始化完成');
+          
+          // 检查初始化状态
+          setTimeout(function() {
+            console.log('检查OneSignal初始化状态:', OneSignal.initialized);
+            if (!OneSignal.initialized) {
+              console.log('OneSignal未初始化，尝试重新初始化');
+              // 重新初始化
+              OneSignal.init({
+                appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
+                notifyButton: {
+                  enable: true
+                },
+                serviceWorker: {
+                  useOneSignalWorker: false, // 尝试不使用OneSignal的Worker
+                  registrationOptions: {
+                    scope: './'
+                  }
+                },
+                debug: true
+              });
+              console.log('OneSignal重新初始化完成');
+            }
+          }, 2000);
+        } catch (error) {
+          console.error('OneSignal初始化出错:', error);
+        }
 
         // 监听初始化完成事件
         OneSignal.on('initialized', function() {
