@@ -10,12 +10,32 @@
     <meta name="theme-color" content="#4A90E2" />
     <!-- OneSignal SDK -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script type="module" crossorigin src="/door-app/assets/index-DFsB7DmV.js"></script>
+    <script type="module" crossorigin src="/door-app/assets/index-1IPspGpk.js"></script>
     <link rel="stylesheet" crossorigin href="/door-app/assets/index-BNxhVLTb.css">
   </head>
   <body>
     <div id="root"></div>
     <script>
+      // 核心修复：在OneSignal加载前重写navigator.serviceWorker.register方法
+      // 阻止OneSignal从根路径注册ServiceWorker
+      const originalRegister = navigator.serviceWorker.register;
+      navigator.serviceWorker.register = function(scriptURL, options) {
+        // 检查是否是OneSignal的ServiceWorker
+        if (scriptURL.includes('OneSignalSDKWorker.js')) {
+          console.log('阻止OneSignal从根路径注册ServiceWorker:', scriptURL);
+          // 返回一个假的Promise，避免错误
+          return Promise.resolve({
+            scope: '/door-app/',
+            active: {
+              scriptURL: '/door-app/OneSignalSDKWorker.js',
+              state: 'activated'
+            }
+          });
+        }
+        // 其他ServiceWorker正常注册
+        return originalRegister.apply(navigator.serviceWorker, arguments);
+      };
+      
       // OneSignal 初始化 - 完全控制ServiceWorker
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
@@ -45,7 +65,7 @@
           console.log('开始手动注册ServiceWorker');
           
           // 手动注册ServiceWorker，使用子路径
-          const registration = await navigator.serviceWorker.register(
+          const registration = await originalRegister(
             '/door-app/OneSignalSDKWorker.js',
             {
               scope: '/door-app/'
@@ -58,7 +78,7 @@
           window.__oneSignalServiceWorkerRegistration = registration;
           
           // 重写OneSignal的ServiceWorker注册方法，完全阻止它
-          const originalRegister = OneSignal.registerForPushNotifications;
+          const originalRegisterForPush = OneSignal.registerForPushNotifications;
           OneSignal.registerForPushNotifications = function(options) {
             console.log('OneSignal注册被阻止，使用手动注册的ServiceWorker');
             return Promise.resolve();
@@ -70,8 +90,10 @@
             // 禁用自动注册
             autoRegister: false,
             // 禁用ServiceWorker自动注册
-            serviceWorkerPath: '',
-            serviceWorkerParam: {},
+            serviceWorkerPath: '/door-app/OneSignalSDKWorker.js',
+            serviceWorkerParam: {
+              scope: '/door-app/'
+            },
             // 允许本地开发环境使用HTTP
             allowLocalhostAsSecureOrigin: true,
             // 自动提示用户订阅
