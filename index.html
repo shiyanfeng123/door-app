@@ -18,14 +18,16 @@
   // 初始化 OneSignal
   window.OneSignal = window.OneSignal || [];
   OneSignal.push(function() {
-    OneSignal.init({
-      appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
-      autoRegister: true,
-      notifyButton: {
-        enable: true
-      },
-      allowLocalhostAsSecureOrigin: true
-    });
+        OneSignal.init({
+          appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
+          autoRegister: true,
+          notifyButton: {
+            enable: true
+          },
+          allowLocalhostAsSecureOrigin: true,
+          serviceWorkerPath: '/door-app/OneSignalSDKWorker.js',
+          serviceWorkerUpdaterPath: '/door-app/OneSignalSDKExtensionWorker.js'
+        });
 
     // 监听通知权限变化
     OneSignal.on('permissionChange', function(permissionChange) {
