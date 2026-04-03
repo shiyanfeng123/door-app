@@ -16,11 +16,13 @@
   <body>
     <div id="root"></div>
     <script>
-      // 初始化 OneSignal
+      // 初始化 OneSignal - 使用CDN托管的Service Worker
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({
-          appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af"
+          appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
+          serviceWorkerPath: 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js',
+          serviceWorkerUpdaterPath: 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js'
         });
 
         // 监听通知权限变化
