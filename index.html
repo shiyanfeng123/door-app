@@ -8,205 +8,77 @@
     <link rel="manifest" href="/door-app/manifest.json" />
     <link rel="apple-touch-icon" href="/door-app/icons/icon-192x192.png" />
     <meta name="theme-color" content="#4A90E2" />
-    <!-- OneSignal SDK -->
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script type="module" crossorigin src="/door-app/assets/index-1IPspGpk.js"></script>
+    <!-- Firebase SDK -->
+    <script type="module" crossorigin src="/door-app/assets/index-Bf5voA64.js"></script>
     <link rel="stylesheet" crossorigin href="/door-app/assets/index-BNxhVLTb.css">
   </head>
   <body>
     <div id="root"></div>
+    <!-- 通知测试界面 -->
+    <div style="position: fixed; bottom: 20px; left: 20px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 300px;">
+      <h3>发送通知测试</h3>
+      
+      <!-- 目标设备FCM令牌输入 -->
+      <label style="display: block; margin-bottom: 5px; font-size: 12px; font-weight: bold;">目标设备FCM令牌:</label>
+      <input type="text" id="targetDeviceId" placeholder="输入目标设备的FCM令牌" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+      
+      <!-- 写死FCM令牌选项 -->
+      <div style="margin-bottom: 10px;">
+        <input type="checkbox" id="useFixedToken" onchange="toggleFixedToken()">
+        <label for="useFixedToken" style="font-size: 12px;">使用固定FCM令牌</label>
+      </div>
+      
+      <!-- 固定FCM令牌输入 -->
+      <div id="fixedTokenContainer" style="display: none; margin-bottom: 10px;">
+        <label style="display: block; margin-bottom: 5px; font-size: 12px; font-weight: bold;">固定FCM令牌:</label>
+        <input type="text" id="fixedToken" value="" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+      </div>
+      
+      <!-- 发送按钮 -->
+      <button onclick="sendNotification()" style="width: 100%; padding: 10px; background: #4A90E2; color: white; border: none; border-radius: 4px; cursor: pointer;">发送通知</button>
+      
+      <!-- 当前设备FCM令牌 -->
+      <div style="margin-top: 15px;">
+        <p style="margin: 0 0 5px 0; font-size: 12px; font-weight: bold;">当前设备FCM令牌:</p>
+        <div style="background: #f5f5f5; padding: 10px; border-radius: 4px; word-break: break-all; font-size: 11px; max-height: 100px; overflow-y: auto;">
+          <span id="deviceIdDisplay">加载中...</span>
+        </div>
+        <button onclick="copyToken()" style="margin-top: 5px; padding: 5px 10px; font-size: 10px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">复制令牌</button>
+      </div>
+    </div>
     <script>
-      // 核心修复：完全重写navigator.serviceWorker对象
-      // 阻止OneSignal从根路径注册ServiceWorker
-      const originalServiceWorker = navigator.serviceWorker;
-      
-      // 创建一个完整的PushManager模拟
-      const mockPushManager = {
-        getSubscription: function() {
-          console.log('模拟PushManager.getSubscription被调用');
-          return Promise.resolve(null);
-        },
-        subscribe: function(options) {
-          console.log('模拟PushManager.subscribe被调用');
-          return Promise.resolve({
-            endpoint: 'https://mock-endpoint.example.com',
-            expirationTime: null,
-            getKey: function() { return new ArrayBuffer(0); },
-            toJSON: function() { return {}; },
-            unsubscribe: function() { return Promise.resolve(true); }
-          });
-        },
-        permissionState: function(options) {
-          console.log('模拟PushManager.permissionState被调用');
-          return Promise.resolve('granted');
+      // 显示FCM令牌
+      window.onload = function() {
+        // 从localStorage获取FCM令牌
+        const token = localStorage.getItem('fcmToken');
+        if (token) {
+          document.getElementById('deviceIdDisplay').textContent = token;
+        } else {
+          document.getElementById('deviceIdDisplay').textContent = '尚未生成';
         }
       };
       
-      // 创建一个新的ServiceWorker对象
-      const mockServiceWorker = {
-        register: function(scriptURL, options) {
-          // 检查是否是OneSignal的ServiceWorker
-          if (scriptURL.includes('OneSignalSDKWorker.js')) {
-            console.log('阻止OneSignal从根路径注册ServiceWorker:', scriptURL);
-            // 返回一个假的Promise，避免错误
-            return Promise.resolve({
-              scope: '/door-app/',
-              active: {
-                scriptURL: '/door-app/OneSignalSDKWorker.js',
-                state: 'activated',
-                pushManager: mockPushManager
-              },
-              pushManager: mockPushManager,
-              installing: null,
-              waiting: null,
-              navigationPreload: {}
-            });
-          }
-          // 其他ServiceWorker正常注册
-          return originalServiceWorker.register.apply(originalServiceWorker, arguments);
-        },
-        
-        get ready() {
-          return originalServiceWorker.ready.then(function(registration) {
-            // 确保registration.active.pushManager存在
-            if (registration.active && !registration.active.pushManager) {
-              registration.active.pushManager = mockPushManager;
-            }
-            // 确保registration.pushManager存在
-            if (!registration.pushManager) {
-              registration.pushManager = mockPushManager;
-            }
-            return registration;
-          });
-        },
-        
-        // 其他方法和属性
-        get controller() {
-          const controller = originalServiceWorker.controller;
-          if (controller && !controller.pushManager) {
-            controller.pushManager = mockPushManager;
-          }
-          return controller;
-        },
-        
-        get registration() {
-          const registration = originalServiceWorker.registration;
-          if (registration && !registration.pushManager) {
-            registration.pushManager = mockPushManager;
-          }
-          return registration;
-        },
-        
-        get registrations() {
-          return originalServiceWorker.registrations.then(function(registrations) {
-            return registrations.map(function(registration) {
-              if (!registration.pushManager) {
-                registration.pushManager = mockPushManager;
-              }
-              if (registration.active && !registration.active.pushManager) {
-                registration.active.pushManager = mockPushManager;
-              }
-              return registration;
-            });
-          });
-        },
-        
-        addEventListener: function() {
-          return originalServiceWorker.addEventListener.apply(originalServiceWorker, arguments);
-        },
-        
-        removeEventListener: function() {
-          return originalServiceWorker.removeEventListener.apply(originalServiceWorker, arguments);
-        },
-        
-        dispatchEvent: function() {
-          return originalServiceWorker.dispatchEvent.apply(originalServiceWorker, arguments);
-        }
-      };
+      // 切换固定FCM令牌选项
+      function toggleFixedToken() {
+        const checkbox = document.getElementById('useFixedToken');
+        const container = document.getElementById('fixedTokenContainer');
+        container.style.display = checkbox.checked ? 'block' : 'none';
+      }
       
-      // 替换navigator.serviceWorker
-      Object.defineProperty(navigator, 'serviceWorker', {
-        value: mockServiceWorker,
-        writable: false,
-        enumerable: true,
-        configurable: true
-      });
-      
-      // OneSignal 初始化 - 完全控制ServiceWorker
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(function(OneSignal) {
-        // 准确的环境检测
-        const isLocalhost = window.location.hostname === 'localhost' || 
-                           window.location.hostname === '127.0.0.1' ||
-                           window.location.hostname === '::1'; // IPv6 localhost
-        
-        const isProduction = window.location.hostname.includes('github.io');
-        const currentPath = window.location.pathname;
-        
-        console.log('OneSignal环境检测:', {
-          hostname: window.location.hostname,
-          isLocalhost,
-          isProduction,
-          currentPath
-        });
-        
-        // 本地开发环境：跳过初始化以避免ServiceWorker错误
-        if (isLocalhost) {
-          console.log('开发环境：跳过OneSignal初始化');
-          return;
-        }
-        
-        // 核心修复：手动注册ServiceWorker，完全控制路径
-        console.log('开始手动注册ServiceWorker');
-        
-        // 手动注册ServiceWorker，使用子路径
-        originalServiceWorker.register.apply(originalServiceWorker, [
-          '/door-app/OneSignalSDKWorker.js',
-          {
-            scope: '/door-app/'
-          }
-        ]).then(function(registration) {
-          console.log('ServiceWorker注册成功:', registration);
-          
-          // 保存注册信息到全局变量，供OneSignal使用
-          window.__oneSignalServiceWorkerRegistration = registration;
-          
-          // 初始化OneSignal，完全禁用ServiceWorker
-          OneSignal.init({
-            appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
-            // 禁用自动注册
-            autoRegister: false,
-            // 禁用ServiceWorker
-            serviceWorkerPath: '',
-            serviceWorkerParam: {},
-            // 允许本地开发环境使用HTTP
-            allowLocalhostAsSecureOrigin: true,
-            // 禁用自动提示
-            promptOptions: {
-              slidedown: {
-                enabled: false
-              }
-            }
-          }).then(function() {
-            console.log('OneSignal初始化成功');
-            
-            // 手动处理通知权限
-            if ('Notification' in window) {
-              Notification.requestPermission().then(function(permission) {
-                console.log('通知权限获取成功:', permission);
-              }).catch(function(error) {
-                console.error('获取通知权限失败:', error);
-              });
-            } else {
-              console.log('浏览器不支持通知，跳过通知相关操作');
-            }
+      // 复制FCM令牌到剪贴板
+      function copyToken() {
+        const token = document.getElementById('deviceIdDisplay').textContent;
+        if (token && token !== '尚未生成') {
+          navigator.clipboard.writeText(token).then(function() {
+            alert('FCM令牌已复制到剪贴板');
           }).catch(function(error) {
-            console.error('OneSignal初始化失败:', error);
+            console.error('复制失败:', error);
+            alert('复制失败');
           });
-        }).catch(function(error) {
-          console.error('ServiceWorker注册失败:', error);
-        });
-      });
+        } else {
+          alert('FCM令牌尚未生成');
+        }
+      }
     </script>
   </body>
 </html>
