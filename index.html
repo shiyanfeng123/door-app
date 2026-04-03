@@ -40,12 +40,13 @@
         }
         
         try {
-          // 生产环境配置
+          // 关键修复：使用完整的ServiceWorker配置
           await OneSignal.init({
             appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
-            // 重要：设置正确的ServiceWorker路径
-            serviceWorkerPath: '/door-app/OneSignalSDKWorker.js',
+            // 明确指定ServiceWorker路径
+            serviceWorkerPath: 'OneSignalSDKWorker.js',
             serviceWorkerParam: {
+              // 明确指定作用域
               scope: '/door-app/'
             },
             // 允许本地开发环境使用HTTP
@@ -58,10 +59,23 @@
                 timeDelay: 3,
                 pageViews: 1
               }
-            }
+            },
+            // 禁用自动注册，手动控制
+            autoRegister: false
           });
           
           console.log('OneSignal初始化成功');
+          
+          // 手动注册ServiceWorker，确保使用正确的路径
+          await OneSignal.registerForPushNotifications({ 
+            serviceWorkerParam: {
+              scope: '/door-app/',
+              // 明确指定ServiceWorker脚本URL
+              scriptURL: '/door-app/OneSignalSDKWorker.js'
+            }
+          });
+          
+          console.log('ServiceWorker注册成功');
           
           // 监听通知权限变化
           OneSignal.on('permissionChange', function(permissionChange) {
