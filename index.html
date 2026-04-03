@@ -16,6 +16,13 @@
       window.OneSignal = window.OneSignal || [];
       console.log('OneSignal对象:', window.OneSignal);
       
+      // 直接检查OneSignal SDK是否加载
+      if (typeof window.OneSignal !== 'undefined') {
+        console.log('OneSignal SDK已定义');
+      } else {
+        console.log('OneSignal SDK未定义');
+      }
+      
       // 添加日志回调
       OneSignal.push(function() {
         console.log('OneSignal push回调执行');
@@ -23,10 +30,31 @@
         // 检查Service Worker支持
         if ('serviceWorker' in navigator) {
           console.log('浏览器支持Service Worker');
+          
+          // 检查Service Worker注册状态
+          navigator.serviceWorker.ready.then(function(registration) {
+            console.log('Service Worker已就绪:', registration);
+          }).catch(function(error) {
+            console.error('Service Worker就绪失败:', error);
+          });
         } else {
           console.log('浏览器不支持Service Worker');
         }
         
+        // 尝试手动注册Service Worker
+        if ('serviceWorker' in navigator) {
+          console.log('尝试手动注册OneSignal Service Worker');
+          navigator.serviceWorker.register('/OneSignalSDKWorker.js', {
+            scope: '/door-app/'
+          }).then(function(registration) {
+            console.log('手动注册Service Worker成功:', registration);
+          }).catch(function(error) {
+            console.error('手动注册Service Worker失败:', error);
+          });
+        }
+        
+        // 配置OneSignal
+        console.log('开始配置OneSignal');
         OneSignal.init({
           appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
           notifyButton: {
@@ -91,6 +119,21 @@
         OneSignal.on('error', function(error) {
           console.error('OneSignal错误:', error);
         });
+        
+        // 手动触发获取用户ID
+        setTimeout(function() {
+          console.log('手动尝试获取用户ID');
+          OneSignal.getUserId(function(userId) {
+            console.log('手动获取OneSignal用户ID:', userId);
+            if (userId) {
+              localStorage.setItem('onesignalUserId', userId);
+              document.getElementById('deviceIdDisplay').textContent = userId;
+              console.log('手动获取用户ID已保存');
+            } else {
+              console.log('手动获取仍未得到用户ID');
+            }
+          });
+        }, 3000);
       });
 
       // 检查OneSignal SDK加载状态
@@ -98,6 +141,7 @@
         console.log('页面加载完成，检查OneSignal状态');
         if (window.OneSignal) {
           console.log('OneSignal SDK加载成功');
+          console.log('OneSignal版本:', window.OneSignal.version || '未知');
         } else {
           console.log('OneSignal SDK加载失败');
         }
