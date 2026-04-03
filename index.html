@@ -48,7 +48,7 @@
             console.log('收到前台通知:', payload);
             // 可在此处显示自定义通知
           });
-          
+          console.log(messaging,'messaging')
           const permission = await Notification.requestPermission();
           console.log('用户通知权限:', permission);
 
