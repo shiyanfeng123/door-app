@@ -23,31 +23,23 @@ jobs:
         run: npm run build
       - name: List files before copy
         run: ls -la public/
-      - name: Copy OneSignal Service Worker files to both root and door-app directory
+      - name: Prepare deployment directory
         run: |
-          # 复制到dist目录（会部署到/door-app/）
-          cp -f public/OneSignalSDKWorker.js dist/
-          cp -f public/OneSignalSDKExtensionWorker.js dist/
-          # 创建根目录部署文件夹
-          mkdir -p dist-root
-          # 复制OneSignal文件到根目录
-          cp -f public/OneSignalSDKWorker.js dist-root/
-          cp -f public/OneSignalSDKExtensionWorker.js dist-root/
-          ls -la dist/
-          ls -la dist-root/
+          # 创建最终部署目录
+          mkdir -p deploy
+          # 复制项目文件到deploy/door-app/
+          cp -r dist/* deploy/door-app/
+          # 复制OneSignal文件到deploy/（根目录）
+          cp -f public/OneSignalSDKWorker.js deploy/
+          cp -f public/OneSignalSDKExtensionWorker.js deploy/
+          # 查看部署目录结构
+          ls -la deploy/
+          ls -la deploy/door-app/
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          # 部署子路径内容
-          publish_dir: ./dist
-          # 部署到door-app子目录
-          destination_dir: door-app
-      - name: Deploy OneSignal files to root
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          # 部署根目录内容
-          publish_dir: ./dist-root
+          # 部署完整的部署目录
+          publish_dir: ./deploy
           # 部署到根目录
           destination_dir: .
