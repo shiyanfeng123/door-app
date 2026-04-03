@@ -35,7 +35,7 @@
       async function getFCMToken() {
         try {
           // 注册Firebase service worker
-          const registration = await navigator.serviceWorker.register('https://shiyanfeng123.github.io/door-app/firebase-messaging-sw.js');
+          const registration = await navigator.serviceWorker.register('https://shiyanfeng123.github.io/door-app/firebase-messaging-sw.js',{});
           console.log('Firebase service worker注册成功:', registration);
           
           // 初始化messaging，使用自定义的service worker
