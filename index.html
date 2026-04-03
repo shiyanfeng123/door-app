@@ -106,37 +106,40 @@
             }
           });
           
-          // 通知OneSignal使用我们手动注册的ServiceWorker
-          console.log('设置OneSignal使用手动注册的ServiceWorker');
-          await OneSignal.setServiceWorker(registration);
-          
           console.log('OneSignal初始化成功');
           
-          // 现在请求通知权限
-          const permission = await OneSignal.Notifications.requestPermission();
-          console.log('通知权限获取成功:', permission);
+          // 现在OneSignal应该使用我们手动注册的ServiceWorker
           
-          // 监听通知权限变化
-          OneSignal.on('permissionChange', function(permissionChange) {
-            var currentPermission = permissionChange.to;
-            console.log('通知权限变化为:', currentPermission);
-          });
+          // 检查PushManager是否可用
+          if ('PushManager' in window) {
+            // 现在请求通知权限
+            const permission = await OneSignal.Notifications.requestPermission();
+            console.log('通知权限获取成功:', permission);
+            
+            // 监听通知权限变化
+            OneSignal.on('permissionChange', function(permissionChange) {
+              var currentPermission = permissionChange.to;
+              console.log('通知权限变化为:', currentPermission);
+            });
 
-          // 监听注册成功事件
-          OneSignal.on('subscriptionChange', function(isSubscribed) {
-            console.log('订阅状态变化为:', isSubscribed);
-            if (isSubscribed) {
-              OneSignal.getUserId().then(function(userId) {
-                console.log("OneSignal User ID:", userId);
-                // 保存此 ID，用于发送定向通知
-              });
-            }
-          });
+            // 监听注册成功事件
+            OneSignal.on('subscriptionChange', function(isSubscribed) {
+              console.log('订阅状态变化为:', isSubscribed);
+              if (isSubscribed) {
+                OneSignal.getUserId().then(function(userId) {
+                  console.log("OneSignal User ID:", userId);
+                  // 保存此 ID，用于发送定向通知
+                });
+              }
+            });
 
-          // 尝试获取用户 ID
-          OneSignal.getUserId().then(function(userId) {
-            console.log("OneSignal User ID:", userId);
-          });
+            // 尝试获取用户 ID
+            OneSignal.getUserId().then(function(userId) {
+              console.log("OneSignal User ID:", userId);
+            });
+          } else {
+            console.log('PushManager不可用，跳过通知相关操作');
+          }
         } catch (error) {
           console.error('OneSignal初始化失败:', error);
         }
