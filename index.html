@@ -77,9 +77,27 @@
           
           // 主动请求通知权限
           console.log('🔔 尝试请求通知权限');
-          OneSignal.Notifications.requestPermission(function(permission) {
-            console.log('🔔 通知权限请求结果:', permission);
-          });
+          // 使用正确的API方法
+          if (OneSignal.isPushNotificationsEnabled) {
+            console.log('使用isPushNotificationsEnabled方法');
+            OneSignal.isPushNotificationsEnabled(function(isEnabled) {
+              if (!isEnabled) {
+                // 请求权限
+                OneSignal.registerForPushNotifications();
+              }
+            });
+          } else if (OneSignal.pushSubscription) {
+            console.log('使用pushSubscription方法');
+            OneSignal.pushSubscription.requestPermission();
+          } else {
+            console.log('使用默认方法请求权限');
+            // 尝试使用Notification API直接请求权限
+            if ('Notification' in window) {
+              Notification.requestPermission().then(function(permission) {
+                console.log('🔔 通知权限请求结果:', permission);
+              });
+            }
+          }
           
         } catch (error) {
           console.error('❌ OneSignal初始化失败:', error);
