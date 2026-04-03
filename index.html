@@ -132,15 +132,61 @@
           setTimeout(function() {
             console.log('延迟尝试获取用户ID');
             if (OneSignal.getUserId) {
+              console.log('调用OneSignal.getUserId');
               OneSignal.getUserId(function(userId) {
                 console.log('延迟获取用户ID:', userId);
                 if (userId) {
                   localStorage.setItem('onesignalUserId', userId);
                   document.getElementById('deviceIdDisplay').textContent = userId;
+                  console.log('用户ID已保存并显示');
+                } else {
+                  console.log('未获取到用户ID，尝试其他方法');
+                  
+                  // 尝试检查订阅状态
+                  if (OneSignal.isPushNotificationsEnabled) {
+                    console.log('尝试检查推送通知状态');
+                    OneSignal.isPushNotificationsEnabled(function(isEnabled) {
+                      console.log('推送通知状态:', isEnabled);
+                    });
+                  }
+                  
+                  // 再次尝试请求权限
+                  if ('Notification' in window) {
+                    console.log('再次尝试请求原生通知权限');
+                    Notification.requestPermission().then(function(permission) {
+                      console.log('再次请求权限结果:', permission);
+                      if (permission === 'granted') {
+                        console.log('权限已授予，再次尝试获取用户ID');
+                        OneSignal.getUserId(function(userIdAfterPermission) {
+                          console.log('再次获取用户ID:', userIdAfterPermission);
+                          if (userIdAfterPermission) {
+                            localStorage.setItem('onesignalUserId', userIdAfterPermission);
+                            document.getElementById('deviceIdDisplay').textContent = userIdAfterPermission;
+                          }
+                        });
+                      }
+                    });
+                  }
                 }
               });
+            } else {
+              console.log('OneSignal.getUserId不存在');
             }
           }, 3000);
+          
+          // 监听idsAvailable事件 - 再次确保事件监听器已注册
+          console.log('再次注册idsAvailable事件监听器');
+          OneSignal.on('idsAvailable', function(ids) {
+            console.log('🔔 idsAvailable事件触发:', ids);
+            if (ids && ids.userId) {
+              console.log('✅ 通过idsAvailable获取用户ID:', ids.userId);
+              localStorage.setItem('onesignalUserId', ids.userId);
+              document.getElementById('deviceIdDisplay').textContent = ids.userId;
+              console.log('✅ 用户ID已保存并显示');
+            } else {
+              console.log('❌ idsAvailable事件未提供用户ID');
+            }
+          });
           
         } catch (error) {
           console.error('❌ OneSignal初始化失败:', error);
