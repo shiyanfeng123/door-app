@@ -22,11 +22,10 @@
         await OneSignal.init({
           appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
           serviceWorkerParam: {
-            scope: 'https://shiyanfeng123.github.io/door-app/'
+            scope: '/door-app/'
           },
-          serviceWorkerPath: 'https://shiyanfeng123.github.io/door-app/OneSignalSDKWorker.js',
-          serviceWorkerUpdaterPath: 'https://shiyanfeng123.github.io/door-app/OneSignalSDKExtensionWorker.js',
-          path: 'https://shiyanfeng123.github.io/door-app/'
+          serviceWorkerPath: '/door-app/OneSignalSDKWorker.js',
+          serviceWorkerUpdaterPath: '/door-app/OneSignalSDKExtensionWorker.js'
         });
 
         // 监听通知权限变化
