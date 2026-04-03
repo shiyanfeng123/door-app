@@ -16,13 +16,11 @@
   <body>
     <div id="root"></div>
     <script>
-      // 初始化 OneSignal - 使用CDN托管的Service Worker
+      // 初始化 OneSignal - 使用最简单的配置
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({
-          appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
-          serviceWorkerPath: 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js',
-          serviceWorkerUpdaterPath: 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js'
+          appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af"
         });
 
         // 监听通知权限变化
@@ -47,18 +45,6 @@
           console.log("OneSignal User ID:", userId);
         });
       });
-
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/door-app/service-worker.js')
-            .then(registration => {
-              console.log('Service Worker registered with scope:', registration.scope);
-            })
-            .catch(error => {
-              console.error('Service Worker registration failed:', error);
-            });
-        });
-      }
     </script>
   </body>
 </html>
