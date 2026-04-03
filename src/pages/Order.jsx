@@ -241,6 +241,24 @@ function Order() {
       return
     }
 
+    // 构建通知内容
+    let notificationBody = '点菜清单：\n';
+    Object.values(selectedDishes).forEach(dish => {
+      notificationBody += `${dish.name} × ${dish.quantity}\n`;
+    });
+
+    // 发送通知
+    if (window.sendNotification) {
+      // 这里可以使用之前获取的目标设备FCM令牌
+      // 实际项目中，应该从存储中获取保存的目标设备FCM令牌
+      console.log('发送通知，内容：', notificationBody);
+      // 调用发送通知函数
+      window.sendNotification(notificationBody);
+    } else {
+      // 由于我们没有真实的后端服务器，这里只是模拟发送
+      alert('通知已发送，内容：\n' + notificationBody);
+    }
+
     // 发送 OneSignal 通知
     if (window.OneSignal) {
       window.OneSignal.sendTag('order_count', Object.values(selectedDishes).length);
@@ -263,7 +281,7 @@ function Order() {
             try {
               await navigator.share({
                 title: '我的点菜清单',
-                text: '看看我点的菜',
+                text: notificationBody,
                 files: [
                   new File([blob], 'menu.png', { type: 'image/png' })
                 ]
