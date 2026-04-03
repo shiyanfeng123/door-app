@@ -77,27 +77,70 @@
           
           // 主动请求通知权限
           console.log('🔔 尝试请求通知权限');
-          // 使用正确的API方法
-          if (OneSignal.isPushNotificationsEnabled) {
-            console.log('使用isPushNotificationsEnabled方法');
-            OneSignal.isPushNotificationsEnabled(function(isEnabled) {
-              if (!isEnabled) {
-                // 请求权限
-                OneSignal.registerForPushNotifications();
+          
+          // 检查OneSignal可用方法
+          console.log('OneSignal可用方法:', Object.keys(OneSignal));
+          
+          // 尝试多种方法请求权限
+          try {
+            // 方法1: 直接调用registerForPushNotifications
+            console.log('方法1: 尝试调用registerForPushNotifications');
+            if (OneSignal.registerForPushNotifications) {
+              OneSignal.registerForPushNotifications();
+              console.log('✅ 已调用registerForPushNotifications');
+            } else {
+              console.log('❌ OneSignal.registerForPushNotifications不存在');
+              
+              // 方法2: 尝试使用原生Notification API
+              console.log('方法2: 尝试使用原生Notification API');
+              if ('Notification' in window) {
+                console.log('📢 开始请求原生通知权限');
+                Notification.requestPermission().then(function(permission) {
+                  console.log('🔔 原生通知权限请求结果:', permission);
+                  
+                  // 权限授予后尝试获取用户ID
+                  if (permission === 'granted') {
+                    console.log('✅ 权限已授予，尝试获取用户ID');
+                    if (OneSignal.getUserId) {
+                      OneSignal.getUserId(function(userId) {
+                        console.log('✅ 获取用户ID:', userId);
+                        if (userId) {
+                          localStorage.setItem('onesignalUserId', userId);
+                          document.getElementById('deviceIdDisplay').textContent = userId;
+                        }
+                      });
+                    }
+                  }
+                });
+              } else {
+                console.log('❌ 浏览器不支持Notification API');
               }
-            });
-          } else if (OneSignal.pushSubscription) {
-            console.log('使用pushSubscription方法');
-            OneSignal.pushSubscription.requestPermission();
-          } else {
-            console.log('使用默认方法请求权限');
-            // 尝试使用Notification API直接请求权限
+            }
+          } catch (error) {
+            console.error('❌ 请求权限时出错:', error);
+            
+            // 兜底方案: 使用原生Notification API
             if ('Notification' in window) {
+              console.log('兜底方案: 使用原生Notification API');
               Notification.requestPermission().then(function(permission) {
-                console.log('🔔 通知权限请求结果:', permission);
+                console.log('🔔 兜底方案权限请求结果:', permission);
               });
             }
           }
+          
+          // 延迟尝试获取用户ID
+          setTimeout(function() {
+            console.log('延迟尝试获取用户ID');
+            if (OneSignal.getUserId) {
+              OneSignal.getUserId(function(userId) {
+                console.log('延迟获取用户ID:', userId);
+                if (userId) {
+                  localStorage.setItem('onesignalUserId', userId);
+                  document.getElementById('deviceIdDisplay').textContent = userId;
+                }
+              });
+            }
+          }, 3000);
           
         } catch (error) {
           console.error('❌ OneSignal初始化失败:', error);
