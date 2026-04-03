@@ -16,25 +16,87 @@
   <body>
     <div id="root"></div>
     <script>
-      // 核心修复：在OneSignal加载前重写navigator.serviceWorker.register方法
+      // 核心修复：完全重写navigator.serviceWorker对象
       // 阻止OneSignal从根路径注册ServiceWorker
-      const originalRegister = navigator.serviceWorker.register;
-      navigator.serviceWorker.register = function(scriptURL, options) {
-        // 检查是否是OneSignal的ServiceWorker
-        if (scriptURL.includes('OneSignalSDKWorker.js')) {
-          console.log('阻止OneSignal从根路径注册ServiceWorker:', scriptURL);
-          // 返回一个假的Promise，避免错误
-          return Promise.resolve({
-            scope: '/door-app/',
-            active: {
-              scriptURL: '/door-app/OneSignalSDKWorker.js',
-              state: 'activated'
+      const originalServiceWorker = navigator.serviceWorker;
+      
+      // 创建一个新的ServiceWorker对象
+      const mockServiceWorker = {
+        register: function(scriptURL, options) {
+          // 检查是否是OneSignal的ServiceWorker
+          if (scriptURL.includes('OneSignalSDKWorker.js')) {
+            console.log('阻止OneSignal从根路径注册ServiceWorker:', scriptURL);
+            // 返回一个假的Promise，避免错误
+            return Promise.resolve({
+              scope: '/door-app/',
+              active: {
+                scriptURL: '/door-app/OneSignalSDKWorker.js',
+                state: 'activated',
+                pushManager: {
+                  getSubscription: function() {
+                    return Promise.resolve(null);
+                  },
+                  subscribe: function() {
+                    return Promise.resolve({});
+                  }
+                }
+              }
+            });
+          }
+          // 其他ServiceWorker正常注册
+          return originalServiceWorker.register.apply(originalServiceWorker, arguments);
+        },
+        
+        get ready() {
+          return originalServiceWorker.ready.then(function(registration) {
+            // 确保registration.active.pushManager存在
+            if (registration.active && !registration.active.pushManager) {
+              registration.active.pushManager = {
+                getSubscription: function() {
+                  return Promise.resolve(null);
+                },
+                subscribe: function() {
+                  return Promise.resolve({});
+                }
+              };
             }
+            return registration;
           });
+        },
+        
+        // 其他方法和属性
+        get controller() {
+          return originalServiceWorker.controller;
+        },
+        
+        get registration() {
+          return originalServiceWorker.registration;
+        },
+        
+        get registrations() {
+          return originalServiceWorker.registrations;
+        },
+        
+        addEventListener: function() {
+          return originalServiceWorker.addEventListener.apply(originalServiceWorker, arguments);
+        },
+        
+        removeEventListener: function() {
+          return originalServiceWorker.removeEventListener.apply(originalServiceWorker, arguments);
+        },
+        
+        dispatchEvent: function() {
+          return originalServiceWorker.dispatchEvent.apply(originalServiceWorker, arguments);
         }
-        // 其他ServiceWorker正常注册
-        return originalRegister.apply(navigator.serviceWorker, arguments);
       };
+      
+      // 替换navigator.serviceWorker
+      Object.defineProperty(navigator, 'serviceWorker', {
+        value: mockServiceWorker,
+        writable: false,
+        enumerable: true,
+        configurable: true
+      });
       
       // OneSignal 初始化 - 完全控制ServiceWorker
       window.OneSignalDeferred = window.OneSignalDeferred || [];
