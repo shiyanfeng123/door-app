@@ -136,17 +136,28 @@
           console.error('OneSignal错误:', error);
         });
         
+        // 监听idsAvailable事件获取用户ID
+        console.log('注册idsAvailable事件监听器');
+        OneSignal.on('idsAvailable', function(ids) {
+          console.log('idsAvailable事件触发:', ids);
+          if (ids && ids.userId) {
+            console.log('通过idsAvailable获取用户ID:', ids.userId);
+            localStorage.setItem('onesignalUserId', ids.userId);
+            document.getElementById('deviceIdDisplay').textContent = ids.userId;
+            console.log('用户ID已保存到本地存储');
+          }
+        });
+        
         // 手动触发获取用户ID
         let attemptCount = 0;
-        const maxAttempts = 5;
+        const maxAttempts = 10; // 增加尝试次数
         
         function tryGetUserId() {
           attemptCount++;
           console.log(`尝试获取用户ID (${attemptCount}/${maxAttempts})`);
           
-          // 检查OneSignal对象的状态
-          console.log('OneSignal对象状态:', OneSignal);
-          console.log('OneSignal方法:', Object.keys(OneSignal));
+          // 检查OneSignal初始化状态
+          console.log('OneSignal.initialized:', OneSignal.initialized);
           
           // 尝试获取用户ID
           try {
@@ -184,14 +195,14 @@
           
           // 继续尝试，直到获取到用户ID或达到最大尝试次数
           if (attemptCount < maxAttempts) {
-            setTimeout(tryGetUserId, 2000);
+            setTimeout(tryGetUserId, 3000); // 增加间隔时间
           } else {
             console.log('已达到最大尝试次数，停止尝试获取用户ID');
           }
         }
         
         // 开始尝试获取用户ID
-        setTimeout(tryGetUserId, 3000);
+        setTimeout(tryGetUserId, 2000);
       });
 
       // 检查OneSignal SDK加载状态
