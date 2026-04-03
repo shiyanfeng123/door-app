@@ -44,12 +44,26 @@
         // 尝试手动注册Service Worker
         if ('serviceWorker' in navigator) {
           console.log('尝试手动注册OneSignal Service Worker');
-          navigator.serviceWorker.register('/OneSignalSDKWorker.js', {
-            scope: '/door-app/'
+          // 使用相对于当前页面的路径
+          const swPath = 'OneSignalSDKWorker.js';
+          console.log('Service Worker路径:', swPath);
+          navigator.serviceWorker.register(swPath, {
+            scope: './'
           }).then(function(registration) {
             console.log('手动注册Service Worker成功:', registration);
           }).catch(function(error) {
             console.error('手动注册Service Worker失败:', error);
+            
+            // 尝试另一种路径
+            const altSwPath = '/door-app/OneSignalSDKWorker.js';
+            console.log('尝试备选Service Worker路径:', altSwPath);
+            navigator.serviceWorker.register(altSwPath, {
+              scope: '/door-app/'
+            }).then(function(registration) {
+              console.log('备选路径注册Service Worker成功:', registration);
+            }).catch(function(error) {
+              console.error('备选路径注册Service Worker失败:', error);
+            });
           });
         }
         
@@ -62,8 +76,10 @@
           },
           serviceWorker: {
             useOneSignalWorker: true,
+            serviceWorkerPath: 'OneSignalSDKWorker.js',
+            serviceWorkerUpdaterPath: 'OneSignalSDKUpdaterWorker.js',
             registrationOptions: {
-              scope: '/door-app/'
+              scope: './'
             }
           },
           debug: true // 启用调试模式
