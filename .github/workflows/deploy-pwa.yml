@@ -19,10 +19,13 @@ jobs:
         run: npm install
       - name: Build
         run: npm run build
+      - name: List files before copy
+        run: ls -la public/
       - name: Copy OneSignal Service Worker files
         run: |
-          cp public/OneSignalSDKWorker.js dist/
-          cp public/OneSignalSDKExtensionWorker.js dist/
+          cp -f public/OneSignalSDKWorker.js dist/
+          cp -f public/OneSignalSDKExtensionWorker.js dist/
+          ls -la dist/
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
