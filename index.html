@@ -15,59 +15,53 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-        OneSignalDeferred.push(async function(OneSignal) {
-          await OneSignal.init({
-            appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
-          });
-        });
       // 初始化 OneSignal
-      // window.OneSignalDeferred = window.OneSignalDeferred || [];
-      // OneSignalDeferred.push(async function(OneSignal) {
-      //   await OneSignal.init({
-      //     appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
-      //     serviceWorkerParam: {
-      //       scope: '/door-app/'
-      //     },
-      //     serviceWorkerPath: '/door-app/OneSignalSDKWorker.js',
-      //     serviceWorkerUpdaterPath: '/door-app/OneSignalSDKExtensionWorker.js',
-      //     path: '/door-app/'
-      //   });
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
+          serviceWorkerParam: {
+            scope: 'https://shiyanfeng123.github.io/door-app/'
+          },
+          serviceWorkerPath: 'https://shiyanfeng123.github.io/door-app/OneSignalSDKWorker.js',
+          serviceWorkerUpdaterPath: 'https://shiyanfeng123.github.io/door-app/OneSignalSDKExtensionWorker.js',
+          path: 'https://shiyanfeng123.github.io/door-app/'
+        });
 
-      //   // 监听通知权限变化
-      //   OneSignal.on('permissionChange', function(permissionChange) {
-      //     var currentPermission = permissionChange.to;
-      //     console.log('通知权限变化为:', currentPermission);
-      //   });
+        // 监听通知权限变化
+        OneSignal.on('permissionChange', function(permissionChange) {
+          var currentPermission = permissionChange.to;
+          console.log('通知权限变化为:', currentPermission);
+        });
 
-      //   // 监听注册成功事件
-      //   OneSignal.on('subscriptionChange', function(isSubscribed) {
-      //     console.log('订阅状态变化为:', isSubscribed);
-      //     if (isSubscribed) {
-      //       OneSignal.getUserId().then(function(userId) {
-      //         console.log("OneSignal User ID:", userId);
-      //         // 保存此 ID，用于发送定向通知
-      //       });
-      //     }
-      //   });
+        // 监听注册成功事件
+        OneSignal.on('subscriptionChange', function(isSubscribed) {
+          console.log('订阅状态变化为:', isSubscribed);
+          if (isSubscribed) {
+            OneSignal.getUserId().then(function(userId) {
+              console.log("OneSignal User ID:", userId);
+              // 保存此 ID，用于发送定向通知
+            });
+          }
+        });
 
-      //   // 尝试获取用户 ID
-      //   OneSignal.getUserId().then(function(userId) {
-      //     console.log("OneSignal User ID:", userId);
-      //   });
-      // });
+        // 尝试获取用户 ID
+        OneSignal.getUserId().then(function(userId) {
+          console.log("OneSignal User ID:", userId);
+        });
+      });
 
-      // if ('serviceWorker' in navigator) {
-      //   window.addEventListener('load', () => {
-      //     navigator.serviceWorker.register('/door-app/service-worker.js')
-      //       .then(registration => {
-      //         console.log('Service Worker registered with scope:', registration.scope);
-      //       })
-      //       .catch(error => {
-      //         console.error('Service Worker registration failed:', error);
-      //       });
-      //   });
-      // }
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/door-app/service-worker.js')
+            .then(registration => {
+              console.log('Service Worker registered with scope:', registration.scope);
+            })
+            .catch(error => {
+              console.error('Service Worker registration failed:', error);
+            });
+        });
+      }
     </script>
   </body>
 </html>
