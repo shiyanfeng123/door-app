@@ -49,38 +49,74 @@
             // 可在此处显示自定义通知
           });
           console.log(messaging,'messaging')
-          const permission = await Notification.requestPermission();
-          console.log('用户通知权限:', permission);
+          
+          // 检查Notification API是否可用
+          if ('Notification' in window) {
+            const permission = await Notification.requestPermission();
+            console.log('用户通知权限:', permission);
 
-          if (permission === 'granted') {
-            // 使用已经注册的service worker
-            const token = await getToken(messaging, {
-              vapidKey: "BHlgIk_9hbEYZ3qJMmJRdBJ-DcYtFOt25aNKAKls4ox4wYokq5JQMLKoNwPu2NA5dRDq_Rwb33B3fgYFArsP5ZI", // 在Firebase控制台的云消息传递设置中获取
-              serviceWorkerRegistration: registration
-            });
-            console.log('FCM令牌:', token);
-            
-            // 保存FCM令牌到本地存储
-            localStorage.setItem('fcmToken', token);
-            console.log('FCM令牌已保存到本地存储');
-            
-            // 生成设备ID
-            const deviceId = 'device_' + Math.random().toString(36).substr(2, 9);
-            
-            // 保存设备信息到数据库
-            const deviceRef = ref(database, 'devices/' + deviceId);
-            await set(deviceRef, {
-              token: token,
-              platform: navigator.userAgent.includes('iPhone') ? 'iOS' : 'Android',
-              timestamp: Date.now()
-            });
-            
-            // 保存设备ID到本地存储
-            localStorage.setItem('deviceId', deviceId);
-            console.log('设备ID:', deviceId);
-            return deviceId;
+            if (permission === 'granted') {
+              // 使用已经注册的service worker
+              const token = await getToken(messaging, {
+                vapidKey: "BHlgIk_9hbEYZ3qJMmJRdBJ-DcYtFOt25aNKAKls4ox4wYokq5JQMLKoNwPu2NA5dRDq_Rwb33B3fgYFArsP5ZI", // 在Firebase控制台的云消息传递设置中获取
+                serviceWorkerRegistration: registration
+              });
+              console.log('FCM令牌:', token);
+              
+              // 保存FCM令牌到本地存储
+              localStorage.setItem('fcmToken', token);
+              console.log('FCM令牌已保存到本地存储');
+              
+              // 生成设备ID
+              const deviceId = 'device_' + Math.random().toString(36).substr(2, 9);
+              
+              // 保存设备信息到数据库
+              const deviceRef = ref(database, 'devices/' + deviceId);
+              await set(deviceRef, {
+                token: token,
+                platform: navigator.userAgent.includes('iPhone') ? 'iOS' : 'Android',
+                timestamp: Date.now()
+              });
+              
+              // 保存设备ID到本地存储
+              localStorage.setItem('deviceId', deviceId);
+              console.log('设备ID:', deviceId);
+              return deviceId;
+            } else {
+              console.log('用户拒绝了通知权限');
+            }
           } else {
-            console.log('用户拒绝了通知权限');
+            console.log('当前环境不支持Notification API');
+            // 尝试在不请求权限的情况下获取令牌
+            try {
+              const token = await getToken(messaging, {
+                vapidKey: "BHlgIk_9hbEYZ3qJMmJRdBJ-DcYtFOt25aNKAKls4ox4wYokq5JQMLKoNwPu2NA5dRDq_Rwb33B3fgYFArsP5ZI", // 在Firebase控制台的云消息传递设置中获取
+                serviceWorkerRegistration: registration
+              });
+              console.log('FCM令牌:', token);
+              
+              // 保存FCM令牌到本地存储
+              localStorage.setItem('fcmToken', token);
+              console.log('FCM令牌已保存到本地存储');
+              
+              // 生成设备ID
+              const deviceId = 'device_' + Math.random().toString(36).substr(2, 9);
+              
+              // 保存设备信息到数据库
+              const deviceRef = ref(database, 'devices/' + deviceId);
+              await set(deviceRef, {
+                token: token,
+                platform: navigator.userAgent.includes('iPhone') ? 'iOS' : 'Android',
+                timestamp: Date.now()
+              });
+              
+              // 保存设备ID到本地存储
+              localStorage.setItem('deviceId', deviceId);
+              console.log('设备ID:', deviceId);
+              return deviceId;
+            } catch (error) {
+              console.error('在不支持Notification API的环境中获取令牌失败:', error);
+            }
           }
         } catch (error) {
           console.error('获取FCM令牌失败:', error);
