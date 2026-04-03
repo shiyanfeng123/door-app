@@ -9,7 +9,7 @@
     <link rel="apple-touch-icon" href="/door-app/icons/icon-192x192.png" />
     <meta name="theme-color" content="#4A90E2" />
     <!-- OneSignal SDK -->
-    <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async></script>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script type="module" crossorigin src="/door-app/assets/index-DFsB7DmV.js"></script>
     <link rel="stylesheet" crossorigin href="/door-app/assets/index-BNxhVLTb.css">
   </head>
@@ -17,20 +17,15 @@
     <div id="root"></div>
     <script>
       // 初始化 OneSignal
-      window.OneSignal = window.OneSignal || [];
-      OneSignal.push(function() {
-        OneSignal.init({
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
           appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
-          autoRegister: true,
-          notifyButton: {
-            enable: true
-          },
-          allowLocalhostAsSecureOrigin: true,
           serviceWorkerParam: {
             scope: '/door-app/'
           },
-          serviceWorkerPath: 'OneSignalSDKWorker.js',
-          serviceWorkerUpdaterPath: 'OneSignalSDKExtensionWorker.js'
+          serviceWorkerPath: '/door-app/OneSignalSDKWorker.js',
+          serviceWorkerUpdaterPath: '/door-app/OneSignalSDKExtensionWorker.js'
         });
 
         // 监听通知权限变化
@@ -43,7 +38,7 @@
         OneSignal.on('subscriptionChange', function(isSubscribed) {
           console.log('订阅状态变化为:', isSubscribed);
           if (isSubscribed) {
-            OneSignal.getUserId(function(userId) {
+            OneSignal.getUserId().then(function(userId) {
               console.log("OneSignal User ID:", userId);
               // 保存此 ID，用于发送定向通知
             });
@@ -51,14 +46,8 @@
         });
 
         // 尝试获取用户 ID
-        OneSignal.getUserId(function(userId) {
+        OneSignal.getUserId().then(function(userId) {
           console.log("OneSignal User ID:", userId);
-          if (userId) {
-            // 用户已注册
-          } else {
-            // 用户未注册，尝试注册
-            OneSignal.registerForPushNotifications();
-          }
         });
       });
 
