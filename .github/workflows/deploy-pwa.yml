@@ -25,8 +25,8 @@ jobs:
         run: ls -la public/
       - name: Prepare deployment directory
         run: |
-          # 创建最终部署目录
-          mkdir -p deploy
+          # 创建最终部署目录结构
+          mkdir -p deploy/door-app
           # 复制项目文件到deploy/door-app/
           cp -r dist/* deploy/door-app/
           # 复制OneSignal文件到deploy/（根目录）
