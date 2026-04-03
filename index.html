@@ -15,24 +15,32 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
-      // OneSignal 初始化 - 安全配置，避免ServiceWorker错误
-      // 在本地开发时完全禁用，生产环境使用正确路径
+      // OneSignal 初始化 - 智能环境检测配置
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
+        // 准确的环境检测
         const isLocalhost = window.location.hostname === 'localhost' || 
                            window.location.hostname === '127.0.0.1' ||
-                           window.location.hostname === '';
+                           window.location.hostname === '::1'; // IPv6 localhost
         
-        // 如果是本地开发环境，不初始化OneSignal
+        const isProduction = window.location.hostname.includes('github.io');
+        const currentPath = window.location.pathname;
+        
+        console.log('OneSignal环境检测:', {
+          hostname: window.location.hostname,
+          isLocalhost,
+          isProduction,
+          currentPath
+        });
+        
+        // 本地开发环境：跳过初始化以避免ServiceWorker错误
         if (isLocalhost) {
           console.log('开发环境：跳过OneSignal初始化');
           return;
         }
         
-        // 生产环境配置
-        console.log('生产环境：初始化OneSignal');
-        
         try {
+          // 生产环境配置
           await OneSignal.init({
             appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
             // 重要：设置正确的ServiceWorker路径
@@ -40,7 +48,7 @@
             serviceWorkerParam: {
               scope: '/door-app/'
             },
-            // 开发环境允许HTTP
+            // 允许本地开发环境使用HTTP
             allowLocalhostAsSecureOrigin: true,
             // 自动提示用户订阅
             promptOptions: {
@@ -54,6 +62,28 @@
           });
           
           console.log('OneSignal初始化成功');
+          
+          // 监听通知权限变化
+          OneSignal.on('permissionChange', function(permissionChange) {
+            var currentPermission = permissionChange.to;
+            console.log('通知权限变化为:', currentPermission);
+          });
+
+          // 监听注册成功事件
+          OneSignal.on('subscriptionChange', function(isSubscribed) {
+            console.log('订阅状态变化为:', isSubscribed);
+            if (isSubscribed) {
+              OneSignal.getUserId().then(function(userId) {
+                console.log("OneSignal User ID:", userId);
+                // 保存此 ID，用于发送定向通知
+              });
+            }
+          });
+
+          // 尝试获取用户 ID
+          OneSignal.getUserId().then(function(userId) {
+            console.log("OneSignal User ID:", userId);
+          });
         } catch (error) {
           console.error('OneSignal初始化失败:', error);
         }

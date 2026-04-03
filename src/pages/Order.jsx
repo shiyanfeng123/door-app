@@ -241,14 +241,10 @@ function Order() {
       return
     }
 
-    // 发送 OneSignal 通知（仅在OneSignal可用时）
-    if (window.OneSignal && typeof window.OneSignal.sendTag === 'function') {
-      try {
-        window.OneSignal.sendTag('order_count', Object.values(selectedDishes).length);
-        console.log('OneSignal通知已发送');
-      } catch (error) {
-        console.error('发送OneSignal通知失败:', error);
-      }
+    // 发送 OneSignal 通知
+    if (window.OneSignal) {
+      window.OneSignal.sendTag('order_count', Object.values(selectedDishes).length);
+      // 这里可以通过 OneSignal 控制台或 API 发送通知
     }
 
     if (menuRef.current) {
