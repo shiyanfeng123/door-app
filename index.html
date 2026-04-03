@@ -16,7 +16,7 @@
   <body>
     <div id="root"></div>
     <script>
-      // OneSignal 初始化 - 智能环境检测配置
+      // OneSignal 初始化 - 针对子路径部署的特殊配置
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
         // 准确的环境检测
@@ -41,42 +41,54 @@
         }
         
         try {
-          // 关键修复：使用完整的ServiceWorker配置
+          // 关键修复：使用OneSignal的完整配置，确保ServiceWorker路径正确
           await OneSignal.init({
             appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
-            // 明确指定ServiceWorker路径
+            // 核心配置：指定ServiceWorker路径
             serviceWorkerPath: 'OneSignalSDKWorker.js',
+            // 确保作用域正确
             serviceWorkerParam: {
-              // 明确指定作用域
               scope: '/door-app/'
             },
             // 允许本地开发环境使用HTTP
             allowLocalhostAsSecureOrigin: true,
-            // 自动提示用户订阅
+            // 禁用自动注册，完全手动控制
+            autoRegister: false,
+            // 禁用自动提示
             promptOptions: {
               slidedown: {
-                enabled: true,
-                autoPrompt: true,
-                timeDelay: 3,
-                pageViews: 1
+                enabled: false
               }
-            },
-            // 禁用自动注册，手动控制
-            autoRegister: false
+            }
           });
           
           console.log('OneSignal初始化成功');
           
-          // 手动注册ServiceWorker，确保使用正确的路径
-          await OneSignal.registerForPushNotifications({ 
-            serviceWorkerParam: {
-              scope: '/door-app/',
-              // 明确指定ServiceWorker脚本URL
-              scriptURL: '/door-app/OneSignalSDKWorker.js'
-            }
-          });
+          // 核心修复：手动注册ServiceWorker，使用完整的路径
+          const registrationOptions = {
+            scope: '/door-app/',
+            // 明确指定ServiceWorker脚本的完整URL
+            scriptURL: '/door-app/OneSignalSDKWorker.js'
+          };
           
-          console.log('ServiceWorker注册成功');
+          console.log('准备注册ServiceWorker:', registrationOptions);
+          
+          // 手动注册ServiceWorker
+          const registration = await navigator.serviceWorker.register(
+            '/door-app/OneSignalSDKWorker.js',
+            registrationOptions
+          );
+          
+          console.log('ServiceWorker注册成功:', registration);
+          
+          // 通知OneSignal使用我们手动注册的ServiceWorker
+          await OneSignal.setServiceWorker(registration);
+          
+          console.log('OneSignal ServiceWorker设置成功');
+          
+          // 现在请求通知权限
+          const permission = await OneSignal.Notifications.requestPermission();
+          console.log('通知权限获取成功:', permission);
           
           // 监听通知权限变化
           OneSignal.on('permissionChange', function(permissionChange) {
