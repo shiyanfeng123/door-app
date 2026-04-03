@@ -38,7 +38,7 @@
       
       // OneSignal 初始化 - 完全控制ServiceWorker
       window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function(OneSignal) {
+      OneSignalDeferred.push(function(OneSignal) {
         // 准确的环境检测
         const isLocalhost = window.location.hostname === 'localhost' || 
                            window.location.hostname === '127.0.0.1' ||
@@ -60,32 +60,23 @@
           return;
         }
         
-        try {
-          // 核心修复：手动注册ServiceWorker，完全控制路径
-          console.log('开始手动注册ServiceWorker');
-          
-          // 手动注册ServiceWorker，使用子路径
-          const registration = await originalRegister.apply(navigator.serviceWorker, [
-            '/door-app/OneSignalSDKWorker.js',
-            {
-              scope: '/door-app/'
-            }
-          ]);
-          
+        // 核心修复：手动注册ServiceWorker，完全控制路径
+        console.log('开始手动注册ServiceWorker');
+        
+        // 手动注册ServiceWorker，使用子路径
+        originalRegister.apply(navigator.serviceWorker, [
+          '/door-app/OneSignalSDKWorker.js',
+          {
+            scope: '/door-app/'
+          }
+        ]).then(function(registration) {
           console.log('ServiceWorker注册成功:', registration);
           
           // 保存注册信息到全局变量，供OneSignal使用
           window.__oneSignalServiceWorkerRegistration = registration;
           
-          // 重写OneSignal的ServiceWorker注册方法，完全阻止它
-          const originalRegisterForPush = OneSignal.registerForPushNotifications;
-          OneSignal.registerForPushNotifications = function(options) {
-            console.log('OneSignal注册被阻止，使用手动注册的ServiceWorker');
-            return Promise.resolve();
-          };
-          
           // 初始化OneSignal，禁用所有ServiceWorker相关选项
-          await OneSignal.init({
+          OneSignal.init({
             appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
             // 禁用自动注册
             autoRegister: false,
@@ -105,45 +96,26 @@
                 pageViews: 1
               }
             }
-          });
-          
-          console.log('OneSignal初始化成功');
-          
-          // 现在OneSignal应该使用我们手动注册的ServiceWorker
-          
-          // 检查PushManager是否可用
-          if ('PushManager' in window) {
-            // 现在请求通知权限
-            const permission = await OneSignal.Notifications.requestPermission();
-            console.log('通知权限获取成功:', permission);
+          }).then(function() {
+            console.log('OneSignal初始化成功');
             
-            // 监听通知权限变化
-            OneSignal.on('permissionChange', function(permissionChange) {
-              var currentPermission = permissionChange.to;
-              console.log('通知权限变化为:', currentPermission);
-            });
-
-            // 监听注册成功事件
-            OneSignal.on('subscriptionChange', function(isSubscribed) {
-              console.log('订阅状态变化为:', isSubscribed);
-              if (isSubscribed) {
-                OneSignal.getUserId().then(function(userId) {
-                  console.log("OneSignal User ID:", userId);
-                  // 保存此 ID，用于发送定向通知
-                });
-              }
-            });
-
-            // 尝试获取用户 ID
-            OneSignal.getUserId().then(function(userId) {
-              console.log("OneSignal User ID:", userId);
-            });
-          } else {
-            console.log('PushManager不可用，跳过通知相关操作');
-          }
-        } catch (error) {
-          console.error('OneSignal初始化失败:', error);
-        }
+            // 检查PushManager是否可用
+            if ('PushManager' in window && OneSignal.Notifications) {
+              // 现在请求通知权限
+              OneSignal.Notifications.requestPermission().then(function(permission) {
+                console.log('通知权限获取成功:', permission);
+              }).catch(function(error) {
+                console.error('获取通知权限失败:', error);
+              });
+            } else {
+              console.log('PushManager不可用或OneSignal.Notifications不存在，跳过通知相关操作');
+            }
+          }).catch(function(error) {
+            console.error('OneSignal初始化失败:', error);
+          });
+        }).catch(function(error) {
+          console.error('ServiceWorker注册失败:', error);
+        });
       });
     </script>
   </body>
