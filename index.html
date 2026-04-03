@@ -12,8 +12,21 @@
     <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async></script>
     <script>
       // OneSignal初始化
+      console.log('开始OneSignal初始化');
       window.OneSignal = window.OneSignal || [];
+      console.log('OneSignal对象:', window.OneSignal);
+      
+      // 添加日志回调
       OneSignal.push(function() {
+        console.log('OneSignal push回调执行');
+        
+        // 检查Service Worker支持
+        if ('serviceWorker' in navigator) {
+          console.log('浏览器支持Service Worker');
+        } else {
+          console.log('浏览器不支持Service Worker');
+        }
+        
         OneSignal.init({
           appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
           notifyButton: {
@@ -24,16 +37,44 @@
             registrationOptions: {
               scope: '/door-app/'
             }
-          }
+          },
+          debug: true // 启用调试模式
         });
 
-        // 获取用户ID（OneSignal Player ID）
-        OneSignal.getUserId(function(userId) {
-          console.log('OneSignal用户ID:', userId);
-          if (userId) {
-            localStorage.setItem('onesignalUserId', userId);
-            document.getElementById('deviceIdDisplay').textContent = userId;
-          }
+        console.log('OneSignal初始化完成');
+
+        // 监听初始化完成事件
+        OneSignal.on('initialized', function() {
+          console.log('OneSignal初始化成功');
+          
+          // 获取用户ID（OneSignal Player ID）
+          OneSignal.getUserId(function(userId) {
+            console.log('获取OneSignal用户ID:', userId);
+            if (userId) {
+              localStorage.setItem('onesignalUserId', userId);
+              document.getElementById('deviceIdDisplay').textContent = userId;
+              console.log('用户ID已保存到本地存储');
+            } else {
+              console.log('未获取到用户ID，可能需要用户授权');
+              // 尝试请求通知权限
+              OneSignal.push(function() {
+                OneSignal.Notifications.requestPermission(function(permission) {
+                  console.log('通知权限请求结果:', permission);
+                  if (permission) {
+                    // 再次尝试获取用户ID
+                    OneSignal.getUserId(function(userIdAfterPermission) {
+                      console.log('授权后获取用户ID:', userIdAfterPermission);
+                      if (userIdAfterPermission) {
+                        localStorage.setItem('onesignalUserId', userIdAfterPermission);
+                        document.getElementById('deviceIdDisplay').textContent = userIdAfterPermission;
+                        console.log('授权后用户ID已保存');
+                      }
+                    });
+                  }
+                });
+              });
+            }
+          });
         });
 
         // 监听通知权限变化
@@ -45,6 +86,21 @@
         OneSignal.on('notificationClicked', function(notification) {
           console.log('通知被点击:', notification);
         });
+
+        // 监听错误
+        OneSignal.on('error', function(error) {
+          console.error('OneSignal错误:', error);
+        });
+      });
+
+      // 检查OneSignal SDK加载状态
+      window.addEventListener('load', function() {
+        console.log('页面加载完成，检查OneSignal状态');
+        if (window.OneSignal) {
+          console.log('OneSignal SDK加载成功');
+        } else {
+          console.log('OneSignal SDK加载失败');
+        }
       });
 
       // 点击按钮发送通知
