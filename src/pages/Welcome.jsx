@@ -33,7 +33,7 @@ function Welcome() {
     <div className="welcome-container">
       <div className="welcome-content">
         <img src={icon} alt="Dorr" className="welcome-icon" />
-        <p className="welcome-text">Dorr.App</p>
+        <p className="welcome-text">Dorr  App</p>
       </div>
     </div>
   )
