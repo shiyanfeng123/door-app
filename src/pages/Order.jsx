@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import html2canvas from 'html2canvas'
 import './Order.css'
 import indexedDB from '../utils/indexedDB'
+import defaultDishIcon from '../assets/images/default-dish.svg'
 
 function Order() {
   const navigate = useNavigate()
@@ -240,6 +241,12 @@ function Order() {
       return
     }
 
+    // 发送 OneSignal 通知
+    if (window.OneSignal) {
+      window.OneSignal.sendTag('order_count', Object.values(selectedDishes).length);
+      // 这里可以通过 OneSignal 控制台或 API 发送通知
+    }
+
     if (menuRef.current) {
       try {
         const canvas = await html2canvas(menuRef.current)
@@ -295,8 +302,8 @@ function Order() {
     setIsAddModalOpen(true)
   }
 
-  const handleEditDish = (dish) => {
-    setCurrentDish(dish)
+  const handleEditDish = (dish, category) => {
+    setCurrentDish({ ...dish, category })
     setIsEditModalOpen(true)
   }
 
@@ -326,6 +333,21 @@ function Order() {
         }
         return newDishes
       })
+      
+      // 同时更新已点菜品中的对应菜品数据
+      setSelectedDishes(prev => {
+        const newSelectedDishes = { ...prev }
+        if (newSelectedDishes[currentDish.id]) {
+          newSelectedDishes[currentDish.id] = {
+            ...newSelectedDishes[currentDish.id],
+            name: currentDish.name,
+            image: currentDish.image,
+            category: currentDish.category
+          }
+        }
+        return newSelectedDishes
+      })
+      
       setIsEditModalOpen(false)
     } else {
       // 添加新菜品
@@ -407,12 +429,12 @@ function Order() {
                     dish.name.toLowerCase().includes(searchTerm.toLowerCase())
                   ).map(dish => (
                     <div key={dish.id} className="manage-dish-item">
-                      <img src={dish.image || 'src/assets/images/default-dish.svg'} alt={dish.name} className="manage-dish-image" />
+                      <img src={dish.image || defaultDishIcon} alt={dish.name} className="manage-dish-image" />
                       <h4>{dish.name}</h4>
                       <div className="manage-dish-actions">
                         <button 
                           className="manage-action-button edit"
-                          onClick={() => handleEditDish(dish)}
+                          onClick={() => handleEditDish(dish, category)}
                           title="编辑"
                         />
                         <button 
@@ -466,7 +488,7 @@ function Order() {
                   ).map(dish => (
                     <div key={dish.id} className="dish-item">
                       <div className="dish-image-container">
-                        <img src={dish.image || 'src/assets/images/default-dish.svg'} alt={dish.name} className="dish-image" />
+                        <img src={dish.image || defaultDishIcon} alt={dish.name} className="dish-image" />
                       </div>
                       <div className="dish-info">
                         <h3>{dish.name}</h3>
@@ -504,7 +526,7 @@ function Order() {
             <div className="selected-list">
               {Object.values(selectedDishes).map(dish => (
                 <div key={dish.id} className="selected-item">
-                  <img src={dish.image || 'src/assets/images/default-dish.svg'} alt={dish.name} className="selected-item-image" />
+                  <img src={dish.image || defaultDishIcon} alt={dish.name} className="selected-item-image" />
                   <div className="selected-item-info">
                     <span className="selected-item-name">{dish.name}</span>
                     <span className="selected-item-quantity">×{dish.quantity}</span>
@@ -538,7 +560,7 @@ function Order() {
         <div className="menu-dishes">
           {Object.values(selectedDishes).map(dish => (
             <div key={dish.id} className="menu-dish-item">
-              <img src={dish.image || 'src/assets/images/default-dish.svg'} alt={dish.name} className="menu-dish-image" />
+              <img src={dish.image || defaultDishIcon} alt={dish.name} className="menu-dish-image" />
               <div className="menu-dish-info">
                 <span className="menu-dish-name">{dish.name}</span>
                 <span className="menu-dish-quantity">×{dish.quantity}</span>
