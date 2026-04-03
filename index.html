@@ -28,12 +28,27 @@
 
       // 初始化Firebase
       const app = initializeApp(firebaseConfig);
-      const messaging = getMessaging(app);
+      let messaging;
       const database = getDatabase(app);
 
       // 请求通知权限并获取FCM令牌
       async function getFCMToken() {
         try {
+          // 注册Firebase service worker
+          const registration = await navigator.serviceWorker.register('/door-app/firebase-messaging-sw.js');
+          console.log('Firebase service worker注册成功:', registration);
+          
+          // 初始化messaging，使用自定义的service worker
+          messaging = getMessaging(app, {
+            serviceWorkerRegistration: registration
+          });
+          
+          // 监听前台通知
+          onMessage(messaging, (payload) => {
+            console.log('收到前台通知:', payload);
+            // 可在此处显示自定义通知
+          });
+          
           const permission = await Notification.requestPermission();
           if (permission === 'granted') {
             const token = await getToken(messaging, {
@@ -67,12 +82,6 @@
           console.error('获取FCM令牌失败:', error);
         }
       }
-
-      // 监听前台通知
-      onMessage(messaging, (payload) => {
-        console.log('收到前台通知:', payload);
-        // 可在此处显示自定义通知
-      });
 
       // 初始化
       getFCMToken();
