@@ -65,12 +65,12 @@
           console.log('开始手动注册ServiceWorker');
           
           // 手动注册ServiceWorker，使用子路径
-          const registration = await originalRegister(
+          const registration = await originalRegister.apply(navigator.serviceWorker, [
             '/door-app/OneSignalSDKWorker.js',
             {
               scope: '/door-app/'
             }
-          );
+          ]);
           
           console.log('ServiceWorker注册成功:', registration);
           
