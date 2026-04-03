@@ -8,143 +8,102 @@
     <link rel="manifest" href="/door-app/manifest.json" />
     <link rel="apple-touch-icon" href="/door-app/icons/icon-192x192.png" />
     <meta name="theme-color" content="#4A90E2" />
-    <!-- Firebase SDK -->
-    <script type="module">
-      // 导入Firebase模块
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-      import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging.js";
-      import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
-
-      // Firebase配置
-      const firebaseConfig = {
-        apiKey: "AIzaSyDq7c4_pLV2M2Iu2P47AYZO6u0JKrcaQ1E",
-        authDomain: "dorr-94ad8.firebaseapp.com",
-        projectId: "dorr-94ad8",
-        storageBucket: "dorr-94ad8.firebasestorage.app",
-        messagingSenderId: "957460099096",
-        appId: "1:957460099096:web:6597c0329db3631200936d",
-        measurementId: "G-MHGBZE4JE0"
-      };
-
-      // 初始化Firebase
-      const app = initializeApp(firebaseConfig);
-      let messaging;
-      const database = getDatabase(app);
-
-      // 请求通知权限并获取FCM令牌
-      async function getFCMToken() {
-        try {
-          // 检查Notification API是否可用
-          if ('Notification' in window) {
-            // 注册Firebase service worker
-            const registration = await navigator.serviceWorker.register('https://shiyanfeng123.github.io/door-app/firebase-messaging-sw.js',{});
-            console.log('Firebase service worker注册成功:', registration);
-            
-            // 初始化messaging，使用自定义的service worker
-            messaging = getMessaging(app, {
-              serviceWorkerRegistration: registration
-            });
-            console.log('Firebase messaging初始化成功');
-            // 监听前台通知
-            onMessage(messaging, (payload) => {
-              console.log('收到前台通知:', payload);
-              // 可在此处显示自定义通知
-            });
-            console.log(messaging,'messaging')
-            
-            const permission = await Notification.requestPermission();
-            console.log('用户通知权限:', permission);
-
-            if (permission === 'granted') {
-              // 使用已经注册的service worker
-              const token = await getToken(messaging, {
-                vapidKey: "BHlgIk_9hbEYZ3qJMmJRdBJ-DcYtFOt25aNKAKls4ox4wYokq5JQMLKoNwPu2NA5dRDq_Rwb33B3fgYFArsP5ZI", // 在Firebase控制台的云消息传递设置中获取
-                serviceWorkerRegistration: registration
-              });
-              console.log('FCM令牌:', token);
-              
-              // 保存FCM令牌到本地存储
-              localStorage.setItem('fcmToken', token);
-              console.log('FCM令牌已保存到本地存储');
-              
-              // 生成设备ID
-              const deviceId = 'device_' + Math.random().toString(36).substr(2, 9);
-              
-              // 保存设备信息到数据库
-              const deviceRef = ref(database, 'devices/' + deviceId);
-              await set(deviceRef, {
-                token: token,
-                platform: navigator.userAgent.includes('iPhone') ? 'iOS' : 'Android',
-                timestamp: Date.now()
-              });
-              
-              // 保存设备ID到本地存储
-              localStorage.setItem('deviceId', deviceId);
-              console.log('设备ID:', deviceId);
-              return deviceId;
-            } else {
-              console.log('用户拒绝了通知权限');
+    <!-- OneSignal SDK -->
+    <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async></script>
+    <script>
+      // OneSignal初始化
+      window.OneSignal = window.OneSignal || [];
+      OneSignal.push(function() {
+        OneSignal.init({
+          appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
+          notifyButton: {
+            enable: true
+          },
+          serviceWorker: {
+            useOneSignalWorker: true,
+            registrationOptions: {
+              scope: '/door-app/'
             }
-          } else {
-            console.log('当前环境不支持Notification API，跳过FCM令牌获取');
-            // 生成一个临时设备ID用于标识
-            const deviceId = 'device_' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('deviceId', deviceId);
-            console.log('生成临时设备ID:', deviceId);
-            return deviceId;
           }
-        } catch (error) {
-          console.error('获取FCM令牌失败:', error);
-          // 生成一个临时设备ID用于标识
-          const deviceId = 'device_' + Math.random().toString(36).substr(2, 9);
-          localStorage.setItem('deviceId', deviceId);
-          console.log('生成临时设备ID:', deviceId);
-          return deviceId;
-        }
-      }
+        });
 
-      // 初始化
-      getFCMToken();
+        // 获取用户ID（OneSignal Player ID）
+        OneSignal.getUserId(function(userId) {
+          console.log('OneSignal用户ID:', userId);
+          if (userId) {
+            localStorage.setItem('onesignalUserId', userId);
+            document.getElementById('deviceIdDisplay').textContent = userId;
+          }
+        });
+
+        // 监听通知权限变化
+        OneSignal.on('notificationPermissionChange', function(permissionChange) {
+          console.log('通知权限变化:', permissionChange);
+        });
+
+        // 监听通知点击
+        OneSignal.on('notificationClicked', function(notification) {
+          console.log('通知被点击:', notification);
+        });
+      });
 
       // 点击按钮发送通知
       window.sendNotification = async function(notificationBody = '苹果用户点击了"我点好啦"按钮') {
-        // 获取目标设备FCM令牌
-        let targetToken;
+        // 获取目标设备OneSignal用户ID
+        let targetUserId;
         const useFixedToken = document.getElementById('useFixedToken').checked;
         
         if (useFixedToken) {
-          targetToken = document.getElementById('fixedToken').value;
+          targetUserId = document.getElementById('fixedToken').value;
         } else {
-          targetToken = document.getElementById('targetDeviceId').value;
+          targetUserId = document.getElementById('targetDeviceId').value;
         }
         
-        if (!targetToken) {
-          alert('请输入目标设备的FCM令牌');
+        if (!targetUserId) {
+          alert('请输入目标设备的OneSignal用户ID');
           return;
         }
 
         try {
           // 构建通知数据
           const notificationData = {
-            title: '新通知',
-            body: notificationBody,
-            icon: '/door-app/icons/icon-192x192.png',
-            badge: '/door-app/icons/icon-72x72.png'
+            contents: {
+              en: notificationBody
+            },
+            include_player_ids: [targetUserId],
+            headings: {
+              en: '新通知'
+            },
+            web_url: 'https://shiyanfeng123.github.io/door-app/',
+            chrome_web_icon: '/door-app/icons/icon-192x192.png'
           };
 
           // 显示发送信息
           alert('正在发送通知...');
-          console.log('发送通知到:', targetToken);
+          console.log('发送通知到:', targetUserId);
           console.log('通知内容:', notificationData);
 
-          // 实际项目中，这里需要通过后端服务器发送通知
-          // 由于我们没有后端服务器，我们可以使用第三方服务或Firebase云函数
-          
-          // 这里我们模拟通知发送成功
-          setTimeout(() => {
+          // 使用OneSignal REST API发送通知
+          // 注意：这里需要使用OneSignal API密钥，实际项目中应该在后端服务器调用
+          const response = await fetch('https://onesignal.com/api/v1/notifications', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Basic OGE0MzIyNWEtMjQxMy00MTQxLWJkZDEtMzU0MzM5ZTRjYjQ4'
+            },
+            body: JSON.stringify(notificationData)
+          });
+
+          const result = await response.json();
+          console.log('OneSignal API响应:', result);
+
+          if (result.id) {
             alert('通知发送成功！');
             console.log('通知发送成功');
-          }, 1000);
+          } else {
+            alert('发送失败: ' + result.errors.join(', '));
+            console.error('发送失败:', result.errors);
+          }
         } catch (error) {
           console.error('发送失败:', error);
           alert('发送失败');
@@ -159,65 +118,65 @@
     <div style="position: fixed; bottom: 20px; left: 20px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 300px;">
       <h3>发送通知测试</h3>
       
-      <!-- 目标设备FCM令牌输入 -->
-      <label style="display: block; margin-bottom: 5px; font-size: 12px; font-weight: bold;">目标设备FCM令牌:</label>
-      <input type="text" id="targetDeviceId" placeholder="输入目标设备的FCM令牌" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+      <!-- 目标设备OneSignal用户ID输入 -->
+      <label style="display: block; margin-bottom: 5px; font-size: 12px; font-weight: bold;">目标设备OneSignal用户ID:</label>
+      <input type="text" id="targetDeviceId" placeholder="输入目标设备的OneSignal用户ID" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
       
-      <!-- 写死FCM令牌选项 -->
+      <!-- 写死OneSignal用户ID选项 -->
       <div style="margin-bottom: 10px;">
         <input type="checkbox" id="useFixedToken" onchange="toggleFixedToken()">
-        <label for="useFixedToken" style="font-size: 12px;">使用固定FCM令牌</label>
+        <label for="useFixedToken" style="font-size: 12px;">使用固定OneSignal用户ID</label>
       </div>
       
-      <!-- 固定FCM令牌输入 -->
+      <!-- 固定OneSignal用户ID输入 -->
       <div id="fixedTokenContainer" style="display: none; margin-bottom: 10px;">
-        <label style="display: block; margin-bottom: 5px; font-size: 12px; font-weight: bold;">固定FCM令牌:</label>
+        <label style="display: block; margin-bottom: 5px; font-size: 12px; font-weight: bold;">固定OneSignal用户ID:</label>
         <input type="text" id="fixedToken" value="" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
       </div>
       
       <!-- 发送按钮 -->
       <button onclick="sendNotification()" style="width: 100%; padding: 10px; background: #4A90E2; color: white; border: none; border-radius: 4px; cursor: pointer;">发送通知</button>
       
-      <!-- 当前设备FCM令牌 -->
+      <!-- 当前设备OneSignal用户ID -->
       <div style="margin-top: 15px;">
-        <p style="margin: 0 0 5px 0; font-size: 12px; font-weight: bold;">当前设备FCM令牌:</p>
+        <p style="margin: 0 0 5px 0; font-size: 12px; font-weight: bold;">当前设备OneSignal用户ID:</p>
         <div style="background: #f5f5f5; padding: 10px; border-radius: 4px; word-break: break-all; font-size: 11px; max-height: 100px; overflow-y: auto;">
           <span id="deviceIdDisplay">加载中...</span>
         </div>
-        <button onclick="copyToken()" style="margin-top: 5px; padding: 5px 10px; font-size: 10px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">复制令牌</button>
+        <button onclick="copyToken()" style="margin-top: 5px; padding: 5px 10px; font-size: 10px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">复制用户ID</button>
       </div>
     </div>
     <script>
-      // 显示FCM令牌
+      // 显示OneSignal用户ID
       window.onload = function() {
-        // 从localStorage获取FCM令牌
-        const token = localStorage.getItem('fcmToken');
-        if (token) {
-          document.getElementById('deviceIdDisplay').textContent = token;
+        // 从localStorage获取OneSignal用户ID
+        const userId = localStorage.getItem('onesignalUserId');
+        if (userId) {
+          document.getElementById('deviceIdDisplay').textContent = userId;
         } else {
           document.getElementById('deviceIdDisplay').textContent = '尚未生成';
         }
       };
       
-      // 切换固定FCM令牌选项
+      // 切换固定OneSignal用户ID选项
       function toggleFixedToken() {
         const checkbox = document.getElementById('useFixedToken');
         const container = document.getElementById('fixedTokenContainer');
         container.style.display = checkbox.checked ? 'block' : 'none';
       }
       
-      // 复制FCM令牌到剪贴板
+      // 复制OneSignal用户ID到剪贴板
       function copyToken() {
         const token = document.getElementById('deviceIdDisplay').textContent;
         if (token && token !== '尚未生成') {
           navigator.clipboard.writeText(token).then(function() {
-            alert('FCM令牌已复制到剪贴板');
+            alert('OneSignal用户ID已复制到剪贴板');
           }).catch(function(error) {
             console.error('复制失败:', error);
             alert('复制失败');
           });
         } else {
-          alert('FCM令牌尚未生成');
+          alert('OneSignal用户ID尚未生成');
         }
       }
     </script>
