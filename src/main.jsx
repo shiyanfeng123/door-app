@@ -16,8 +16,8 @@ OneSignal.push(function() {
     welcomeNotification: {
       disable: true
     },
-    serviceWorkerPath: '/OneSignalSDKWorker.js',
-    serviceWorkerUpdaterPath: '/OneSignalSDKUpdaterWorker.js'
+    serviceWorkerPath: 'https://shiyanfeng123.github.io/door-app/OneSignalSDKWorker.js',
+    serviceWorkerUpdaterPath: 'https://shiyanfeng123.github.io/door-app/OneSignalSDKUpdaterWorker.js'
   });
 
   // 监听初始化完成事件
