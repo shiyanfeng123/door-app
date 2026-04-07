@@ -6,20 +6,24 @@ import './index.css'
 // OneSignal 初始化
 window.OneSignal = window.OneSignal || [];
 
-// 直接修改OneSignal的默认配置
-if (window.OneSignal) {
-  // 修改服务工作器路径
-  window.OneSignal.SERVICE_WORKER_PATH = '/door-app/OneSignalSDKWorker.js';
-  // 修改服务工作器作用域
-  window.OneSignal.SERVICE_WORKER_PARAM = { scope: '/door-app/' };
-}
-
-// 覆盖ServiceWorkerHelper.getServiceWorkerHref方法
-if (window.ServiceWorkerHelper) {
-  window.ServiceWorkerHelper.getServiceWorkerHref = function(config, appId, version) {
-    return `https://shiyanfeng123.github.io/door-app/OneSignalSDKWorker.js?appId=${appId}&sdkVersion=${version}`;
-  };
-}
+// 重写OneSignal的push方法，确保配置正确
+const originalPush = window.OneSignal.push;
+window.OneSignal.push = function(item) {
+  // 当执行init方法时，确保配置正确
+  if (typeof item === 'function') {
+    originalPush(function() {
+      // 在初始化之前修改默认配置
+      if (window.OneSignal) {
+        window.OneSignal.SERVICE_WORKER_PATH = '/door-app/OneSignalSDKWorker.js';
+        window.OneSignal.SERVICE_WORKER_PARAM = { scope: '/door-app/' };
+      }
+      // 执行原始的初始化函数
+      item();
+    });
+  } else {
+    originalPush(item);
+  }
+};
 
 OneSignal.push(function() {
   OneSignal.init({
@@ -31,7 +35,8 @@ OneSignal.push(function() {
     safari_web_id: "web.onesignal.auto.466e18d3-e8b5-4577-916c-b7c634612f08",
     welcomeNotification: {
       disable: true
-    }
+    },
+    path: '/door-app/'
   });
 
   // 监听初始化完成事件
