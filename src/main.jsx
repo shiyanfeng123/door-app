@@ -6,20 +6,20 @@ import './index.css'
 // OneSignal 初始化
 window.OneSignal = window.OneSignal || [];
 OneSignal.push(function() {
+  // 直接修改默认值
+  window.OneSignal.SERVICE_WORKER_PATH = '/door-app/OneSignalSDKWorker.js';
+  window.OneSignal.SERVICE_WORKER_PARAM = { scope: '/door-app/' };
+  
   OneSignal.init({
-    appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af", // 替换为你的 OneSignal App ID
+    appId: "8c37e53b-1be9-422f-8efc-a2440a4e51af",
     autoRegister: true,
     notifyButton: {
       enable: true
     },
-    safari_web_id: "web.onesignal.auto.466e18d3-e8b5-4577-916c-b7c634612f08", // Safari 配置
+    safari_web_id: "web.onesignal.auto.466e18d3-e8b5-4577-916c-b7c634612f08",
     welcomeNotification: {
       disable: true
-    },
-    serviceWorkerParam: {
-      scope: '/door-app/'
-    },
-    path: '/door-app/'
+    }
   });
 
   // 监听初始化完成事件
