@@ -15,7 +15,9 @@ OneSignal.push(function() {
     safari_web_id: "web.onesignal.auto.466e18d3-e8b5-4577-916c-b7c634612f08", // Safari 配置
     welcomeNotification: {
       disable: true
-    }
+    },
+    serviceWorkerPath: '/OneSignalSDKWorker.js',
+    serviceWorkerUpdaterPath: '/OneSignalSDKUpdaterWorker.js'
   });
 
   // 监听初始化完成事件
